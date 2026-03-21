@@ -1,19 +1,50 @@
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { TopicsForm } from "@/components/topics/topics-form";
 import { db } from "@/lib/db";
 import { isLocalPreviewMode } from "@/lib/env";
+import {
+  buildPreviewInterestProfile,
+  parsePreviewInterestProfile,
+  PREVIEW_INTEREST_COOKIE,
+} from "@/lib/preview-state";
 import { saveInterestProfile } from "@/lib/topics/service";
 
 export default async function TopicsPage() {
   if (isLocalPreviewMode() || !db) {
-    async function saveTopicsPreview(_formData: FormData) {
+    const cookieStore = await cookies();
+    const previewProfile = parsePreviewInterestProfile(
+      cookieStore.get(PREVIEW_INTEREST_COOKIE)?.value,
+    );
+
+    async function saveTopicsPreview(formData: FormData) {
       "use server";
+
+      const profile = buildPreviewInterestProfile({
+        interestText: String(formData.get("interestText") ?? ""),
+        browserTimezone: String(formData.get("browserTimezone") ?? "UTC"),
+      });
+
+      const nextCookies = await cookies();
+      nextCookies.set(PREVIEW_INTEREST_COOKIE, JSON.stringify(profile), {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+
+      redirect("/today");
     }
 
-    return <TopicsForm initialValue="" onSubmitAction={saveTopicsPreview} />;
+    return (
+      <TopicsForm
+        initialValue={previewProfile?.interestText ?? ""}
+        onSubmitAction={saveTopicsPreview}
+      />
+    );
   }
 
   const session = await getServerSession(authOptions);

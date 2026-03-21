@@ -26,6 +26,7 @@ export function TopicsForm({
       </p>
       <input type="hidden" name="browserTimezone" value={timezone} />
       <textarea
+        aria-label="Describe your interests"
         name="interestText"
         defaultValue={initialValue}
         placeholder="Describe your interests in plain language..."

@@ -1,4 +1,5 @@
 import { DigestView } from "@/components/digest/digest-view";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { notFound } from "next/navigation";
 import { StatusPanel } from "@/components/states/status-panel";
@@ -6,6 +7,10 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getDigestByDayKey } from "@/lib/digest/service";
 import { isLocalPreviewMode } from "@/lib/env";
+import {
+  parsePreviewInterestProfile,
+  PREVIEW_INTEREST_COOKIE,
+} from "@/lib/preview-state";
 
 export default async function ArchiveDetailPage({
   params,
@@ -15,23 +20,19 @@ export default async function ArchiveDetailPage({
   const { digestDayKey } = await params;
 
   if (isLocalPreviewMode()) {
+    const cookieStore = await cookies();
+    const previewProfile = parsePreviewInterestProfile(
+      cookieStore.get(PREVIEW_INTEREST_COOKIE)?.value,
+    );
+
+    if (!previewProfile || previewProfile.firstEligibleDigestDayKey !== digestDayKey) {
+      notFound();
+    }
+
     return (
-      <DigestView
-        title={`Archive: ${digestDayKey}`}
-        intro="This is a preview of how historical daily syntheses will read once digest generation is wired to real stored data."
-        sections={[
-          {
-            title: "Historical Snapshot",
-            summary: [
-              "Archive entries should feel like durable reading artifacts rather than disposable feed items. Each day should be readable on its own without depending on surrounding UI context.",
-              "That makes the archive more useful for pattern recognition over time and aligns with the product's editorial direction.",
-            ],
-            keyPoints: [
-              "Archive entries should preserve their original framing.",
-              "Users should be able to revisit old syntheses as stable documents.",
-            ],
-          },
-        ]}
+      <StatusPanel
+        label={digestDayKey}
+        body="This digest is scheduled in preview mode and will appear here once generation is enabled."
       />
     );
   }

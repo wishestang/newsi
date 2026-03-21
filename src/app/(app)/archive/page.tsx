@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -6,17 +7,34 @@ import { EmptyState } from "@/components/states/empty-state";
 import { db } from "@/lib/db";
 import { listArchivedDigests } from "@/lib/digest/service";
 import { isLocalPreviewMode } from "@/lib/env";
+import {
+  parsePreviewInterestProfile,
+  PREVIEW_INTEREST_COOKIE,
+} from "@/lib/preview-state";
 
 export default async function ArchivePage() {
   if (isLocalPreviewMode()) {
+    const cookieStore = await cookies();
+    const previewProfile = parsePreviewInterestProfile(
+      cookieStore.get(PREVIEW_INTEREST_COOKIE)?.value,
+    );
+
+    if (!previewProfile) {
+      return (
+        <EmptyState
+          title="No archived digests yet"
+          body="Your daily syntheses will appear here once generation is enabled."
+        />
+      );
+    }
+
     return (
       <ArchiveList
-      items={[
+        items={[
           {
-            digestDayKey: "2026-03-21",
-            title: "Today's Synthesis",
-            readingTime: 6,
-            status: "ready",
+            digestDayKey: previewProfile.firstEligibleDigestDayKey,
+            title: "Digest scheduled",
+            status: "scheduled",
           },
         ]}
       />
