@@ -1,3 +1,4 @@
+import { runDigestGenerationCycle } from "@/lib/digest/service";
 import { isAuthConfigured, isPersistenceConfigured } from "@/lib/env";
 
 export async function GET(request: Request) {
@@ -14,8 +15,10 @@ export async function GET(request: Request) {
     });
   }
 
+  const result = await runDigestGenerationCycle();
+
   return Response.json({
     ok: true,
-    skipped: "not-implemented",
+    result,
   });
 }
