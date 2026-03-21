@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AppLayout({
   children,
@@ -13,5 +14,5 @@ export default async function AppLayout({
     redirect("/signin");
   }
 
-  return <>{children}</>;
+  return <AppShell>{children}</AppShell>;
 }
