@@ -6,6 +6,7 @@ describe("GET /api/cron/digests", () => {
     vi.doUnmock("@/lib/digest/service");
     delete process.env.CRON_SECRET;
     delete process.env.DATABASE_URL;
+    delete process.env.AUTH_SECRET;
     delete process.env.AUTH_GOOGLE_ID;
     delete process.env.AUTH_GOOGLE_SECRET;
   });
@@ -39,8 +40,10 @@ describe("GET /api/cron/digests", () => {
   });
 
   it("runs the digest cycle when auth and persistence are configured", async () => {
+    vi.resetModules();
     process.env.CRON_SECRET = "secret";
     process.env.DATABASE_URL = "postgres://localhost/newsi";
+    process.env.AUTH_SECRET = "auth-secret";
     process.env.AUTH_GOOGLE_ID = "google-id";
     process.env.AUTH_GOOGLE_SECRET = "google-secret";
 

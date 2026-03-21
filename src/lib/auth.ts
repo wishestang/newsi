@@ -6,6 +6,7 @@ import { isAuthConfigured } from "@/lib/env";
 
 export const authOptions: NextAuthOptions = isAuthConfigured()
   ? {
+      secret: process.env.AUTH_SECRET,
       adapter: PrismaAdapter(db!),
       providers: [
         GoogleProvider({
@@ -21,6 +22,7 @@ export const authOptions: NextAuthOptions = isAuthConfigured()
       },
     }
   : {
+      secret: process.env.AUTH_SECRET,
       providers: [],
       pages: {
         signIn: "/signin",

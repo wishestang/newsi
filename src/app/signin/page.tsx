@@ -12,7 +12,7 @@ export default function SignInPage() {
           Personal Daily Synthesis
         </p>
         <h1 className="text-5xl font-semibold tracking-tight">Newsi</h1>
-        <GoogleSignInButton />
+        {authConfigured ? <GoogleSignInButton /> : null}
         {!authConfigured ? (
           <div className="mt-6">
             <p className="text-sm text-stone-400">
