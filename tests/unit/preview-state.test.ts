@@ -45,4 +45,46 @@ describe("buildPreviewInterestProfile", () => {
         "Newsi saved this brief and scheduled the first digest for March 23, 2026 after the local 07:00 run. Standing brief: AI agents and design tools",
     });
   });
+
+  it("returns a ready preview digest on or after the first eligible day", async () => {
+    const { getPreviewDigestState } = await import("@/lib/preview-state");
+
+    expect(
+      getPreviewDigestState(
+        {
+          interestText: "AI agents, design tools, indie builders",
+          timezone: "Asia/Shanghai",
+          firstEligibleDigestDayKey: "2026-03-23",
+        },
+        new Date("2026-03-23T09:00:00+08:00"),
+      ),
+    ).toMatchObject({
+      status: "ready",
+      digestDayKey: "2026-03-23",
+      digest: {
+        title: "Today's Synthesis",
+        readingTime: 5,
+      },
+    });
+  });
+
+  it("keeps preview digests scheduled before the first eligible day", async () => {
+    const { getPreviewDigestState } = await import("@/lib/preview-state");
+
+    expect(
+      getPreviewDigestState(
+        {
+          interestText: "AI agents, design tools, indie builders",
+          timezone: "Asia/Shanghai",
+          firstEligibleDigestDayKey: "2026-03-23",
+        },
+        new Date("2026-03-22T09:00:00+08:00"),
+      ),
+    ).toMatchObject({
+      status: "scheduled",
+      archiveItem: {
+        digestDayKey: "2026-03-23",
+      },
+    });
+  });
 });

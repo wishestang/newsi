@@ -16,6 +16,7 @@ import {
 } from "@/lib/digest/view-state";
 import { isLocalPreviewMode } from "@/lib/env";
 import {
+  getPreviewDigestState,
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
@@ -36,12 +37,24 @@ export default async function TodayPage() {
       );
     }
 
+    const previewState = getPreviewDigestState(previewProfile);
+
+    if (previewState.status === "scheduled") {
+      return (
+        <StatusPanel
+          label="Scheduled"
+          body={formatScheduledDigestMessage({
+            firstEligibleDigestDayKey: previewProfile.firstEligibleDigestDayKey,
+          })}
+        />
+      );
+    }
+
     return (
-      <StatusPanel
-        label="Scheduled"
-        body={formatScheduledDigestMessage({
-          firstEligibleDigestDayKey: previewProfile.firstEligibleDigestDayKey,
-        })}
+      <DigestView
+        title={previewState.digest.title}
+        intro={previewState.digest.intro}
+        sections={previewState.digest.sections}
       />
     );
   }

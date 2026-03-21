@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { listArchivedDigests } from "@/lib/digest/service";
 import { isLocalPreviewMode } from "@/lib/env";
 import {
-  buildPreviewArchiveDigest,
+  getPreviewDigestState,
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
@@ -29,9 +29,11 @@ export default async function ArchivePage() {
       );
     }
 
+    const previewState = getPreviewDigestState(previewProfile);
+
     return (
       <ArchiveList
-        items={[buildPreviewArchiveDigest(previewProfile)]}
+        items={[previewState.archiveItem]}
       />
     );
   }
