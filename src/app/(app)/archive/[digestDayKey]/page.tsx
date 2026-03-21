@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { getDigestByDayKey } from "@/lib/digest/service";
 import { isLocalPreviewMode } from "@/lib/env";
 import {
+  buildPreviewArchiveDigest,
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
@@ -25,14 +26,20 @@ export default async function ArchiveDetailPage({
       cookieStore.get(PREVIEW_INTEREST_COOKIE)?.value,
     );
 
-    if (!previewProfile || previewProfile.firstEligibleDigestDayKey !== digestDayKey) {
+    if (!previewProfile) {
+      notFound();
+    }
+
+    const previewDigest = buildPreviewArchiveDigest(previewProfile);
+
+    if (previewDigest.digestDayKey !== digestDayKey) {
       notFound();
     }
 
     return (
       <StatusPanel
         label={digestDayKey}
-        body="This digest is scheduled in preview mode and will appear here once generation is enabled."
+        body={previewDigest.detailBody}
       />
     );
   }

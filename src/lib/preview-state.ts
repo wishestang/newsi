@@ -1,3 +1,4 @@
+import { format, parseISO } from "date-fns";
 import { z } from "zod";
 import {
   getDigestDayKey,
@@ -15,6 +16,13 @@ const previewInterestProfileSchema = z.object({
 });
 
 export type PreviewInterestProfile = z.infer<typeof previewInterestProfileSchema>;
+
+export interface PreviewArchiveDigest {
+  digestDayKey: string;
+  title: string;
+  status: "scheduled";
+  detailBody: string;
+}
 
 export function buildPreviewInterestProfile({
   interestText,
@@ -47,4 +55,15 @@ export function parsePreviewInterestProfile(value: string | null | undefined) {
   } catch {
     return null;
   }
+}
+
+export function buildPreviewArchiveDigest(
+  profile: PreviewInterestProfile,
+): PreviewArchiveDigest {
+  return {
+    digestDayKey: profile.firstEligibleDigestDayKey,
+    title: "Digest scheduled",
+    status: "scheduled",
+    detailBody: `Newsi saved this brief and scheduled the first digest for ${format(parseISO(profile.firstEligibleDigestDayKey), "MMMM d, yyyy")} after the local 07:00 run. Standing brief: ${profile.interestText}`,
+  };
 }

@@ -21,8 +21,19 @@ test.describe("preview flow", () => {
     await expect(page.getByText("Your first digest is scheduled for")).toBeVisible();
 
     await page.goto("/archive");
+    const archiveLink = page.getByRole("link", { name: /Digest scheduled/ });
+    await expect(archiveLink).toBeVisible();
+    await archiveLink.click();
+
+    await expect(page).toHaveURL(/\/archive\/\d{4}-\d{2}-\d{2}$/);
     await expect(
-      page.getByRole("link", { name: /Digest scheduled/ }),
+      page.getByText("Newsi saved this brief and scheduled the first digest for"),
     ).toBeVisible();
+    await expect(page.getByText("AI agents, design tools, and indie builders")).toBeVisible();
+
+    await page.goto("/topics");
+    await expect(
+      page.getByRole("textbox", { name: /describe your interests/i }),
+    ).toHaveValue("AI agents, design tools, and indie builders");
   });
 });

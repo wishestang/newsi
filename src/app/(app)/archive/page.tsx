@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { listArchivedDigests } from "@/lib/digest/service";
 import { isLocalPreviewMode } from "@/lib/env";
 import {
+  buildPreviewArchiveDigest,
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
@@ -30,13 +31,7 @@ export default async function ArchivePage() {
 
     return (
       <ArchiveList
-        items={[
-          {
-            digestDayKey: previewProfile.firstEligibleDigestDayKey,
-            title: "Digest scheduled",
-            status: "scheduled",
-          },
-        ]}
+        items={[buildPreviewArchiveDigest(previewProfile)]}
       />
     );
   }
