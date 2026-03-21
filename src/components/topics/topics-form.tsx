@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 export function TopicsForm({
   initialValue,
   onSubmitAction,
@@ -11,11 +9,7 @@ export function TopicsForm({
   onSubmitAction: (formData: FormData) => void | Promise<void>;
   onClearAction: () => void | Promise<void>;
 }) {
-  const [timezone, setTimezone] = useState("UTC");
-
-  useEffect(() => {
-    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
-  }, []);
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
   return (
     <form action={onSubmitAction} className="mx-auto max-w-3xl px-10 py-20">

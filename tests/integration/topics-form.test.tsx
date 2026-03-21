@@ -7,7 +7,7 @@ describe("TopicsForm", () => {
     render(
       <TopicsForm
         initialValue=""
-        onSubmitAction={vi.fn(async (_formData: FormData) => undefined)}
+        onSubmitAction={vi.fn(async () => undefined)}
         onClearAction={vi.fn(async () => undefined)}
       />,
     );
@@ -21,7 +21,7 @@ describe("TopicsForm", () => {
     render(
       <TopicsForm
         initialValue="AI agents"
-        onSubmitAction={vi.fn(async (_formData: FormData) => undefined)}
+        onSubmitAction={vi.fn(async () => undefined)}
         onClearAction={vi.fn(async () => undefined)}
       />,
     );
