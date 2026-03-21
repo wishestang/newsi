@@ -6,6 +6,9 @@ test.describe("preview flow", () => {
   test("a preview user can save topics and see scheduled digest states", async ({
     page,
   }) => {
+    await page.goto("/signin");
+    await expect(page.getByRole("link", { name: "Open preview" })).toBeVisible();
+
     await page.goto("/today");
     await expect(
       page.getByRole("heading", { name: "What are you exploring?" }),
