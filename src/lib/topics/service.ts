@@ -8,6 +8,10 @@ import {
 } from "@/lib/timezone";
 
 export async function saveInterestProfile(userId: string, input: unknown) {
+  if (!db) {
+    throw new Error("Persistence is not configured.");
+  }
+
   const data = interestProfileSchema.parse(input);
   const user = await db.user.findUniqueOrThrow({
     where: { id: userId },

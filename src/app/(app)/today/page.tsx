@@ -1,15 +1,20 @@
+import { StatusPanel } from "@/components/states/status-panel";
+import { isLocalPreviewMode } from "@/lib/env";
+
 export default function TodayPage() {
+  if (isLocalPreviewMode()) {
+    return (
+      <StatusPanel
+        label="Preview Mode"
+        body="Database and Google OAuth are not configured yet, so Newsi is showing a local preview of the app shell and pages."
+      />
+    );
+  }
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-stone-100 text-stone-900">
-      <div className="w-full max-w-3xl px-10 py-20">
-        <p className="text-xs uppercase tracking-[0.32em] text-stone-500">
-          Today
-        </p>
-        <h1 className="mt-6 text-5xl font-semibold tracking-tight">Today&apos;s Synthesis</h1>
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-stone-600">
-          The authenticated app shell is now wired. Topics, archive, and digest generation come next.
-        </p>
-      </div>
-    </main>
+    <StatusPanel
+      label="Scheduled"
+      body="Your first digest will appear after the next local 07:00 run."
+    />
   );
 }
