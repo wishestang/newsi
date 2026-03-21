@@ -1,3 +1,5 @@
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+
 export default function SignInPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-stone-950 text-stone-100">
@@ -6,6 +8,7 @@ export default function SignInPage() {
           Personal Daily Synthesis
         </p>
         <h1 className="text-5xl font-semibold tracking-tight">Newsi</h1>
+        <GoogleSignInButton />
       </div>
     </main>
   );
