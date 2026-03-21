@@ -1,3 +1,4 @@
+import { DigestView } from "@/components/digest/digest-view";
 import { notFound } from "next/navigation";
 import { StatusPanel } from "@/components/states/status-panel";
 import { isLocalPreviewMode } from "@/lib/env";
@@ -11,9 +12,22 @@ export default async function ArchiveDetailPage({
 
   if (isLocalPreviewMode()) {
     return (
-      <StatusPanel
-        label={digestDayKey}
-        body="Archive detail preview mode. Full digest history will appear here once generation is wired."
+      <DigestView
+        title={`Archive: ${digestDayKey}`}
+        intro="This is a preview of how historical daily syntheses will read once digest generation is wired to real stored data."
+        sections={[
+          {
+            title: "Historical Snapshot",
+            summary: [
+              "Archive entries should feel like durable reading artifacts rather than disposable feed items. Each day should be readable on its own without depending on surrounding UI context.",
+              "That makes the archive more useful for pattern recognition over time and aligns with the product's editorial direction.",
+            ],
+            keyPoints: [
+              "Archive entries should preserve their original framing.",
+              "Users should be able to revisit old syntheses as stable documents.",
+            ],
+          },
+        ]}
       />
     );
   }
