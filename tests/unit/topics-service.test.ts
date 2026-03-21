@@ -7,6 +7,7 @@ const mockDb = {
   },
   interestProfile: {
     upsert: vi.fn(),
+    deleteMany: vi.fn(),
   },
 };
 
@@ -50,5 +51,17 @@ describe("saveInterestProfile", () => {
     });
 
     vi.useRealTimers();
+  });
+
+  it("clears the saved interest profile for a user", async () => {
+    mockDb.interestProfile.deleteMany.mockResolvedValue({ count: 1 });
+
+    const { clearInterestProfile } = await import("@/lib/topics/service");
+
+    await clearInterestProfile("user-1");
+
+    expect(mockDb.interestProfile.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+    });
   });
 });

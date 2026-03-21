@@ -11,7 +11,10 @@ import {
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
-import { saveInterestProfile } from "@/lib/topics/service";
+import {
+  clearInterestProfile,
+  saveInterestProfile,
+} from "@/lib/topics/service";
 
 export default async function TopicsPage() {
   if (isLocalPreviewMode() || !db) {
@@ -39,10 +42,19 @@ export default async function TopicsPage() {
       redirect("/today");
     }
 
+    async function clearTopicsPreview() {
+      "use server";
+
+      const nextCookies = await cookies();
+      nextCookies.delete(PREVIEW_INTEREST_COOKIE);
+      redirect("/today");
+    }
+
     return (
       <TopicsForm
         initialValue={previewProfile?.interestText ?? ""}
         onSubmitAction={saveTopicsPreview}
+        onClearAction={clearTopicsPreview}
       />
     );
   }
@@ -76,10 +88,21 @@ export default async function TopicsPage() {
     revalidatePath("/today");
   }
 
+  async function clearTopics() {
+    "use server";
+
+    await clearInterestProfile(currentUser.id);
+    revalidatePath("/topics");
+    revalidatePath("/today");
+    revalidatePath("/archive");
+    redirect("/today");
+  }
+
   return (
     <TopicsForm
       initialValue={currentUser.interestProfile?.interestText ?? ""}
       onSubmitAction={saveTopics}
+      onClearAction={clearTopics}
     />
   );
 }

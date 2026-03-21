@@ -42,3 +42,13 @@ export async function saveInterestProfile(userId: string, input: unknown) {
     });
   }
 }
+
+export async function clearInterestProfile(userId: string) {
+  if (!db) {
+    throw new Error("Persistence is not configured.");
+  }
+
+  await db.interestProfile.deleteMany({
+    where: { userId },
+  });
+}

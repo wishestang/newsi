@@ -35,5 +35,16 @@ test.describe("preview flow", () => {
     await expect(
       page.getByRole("textbox", { name: /describe your interests/i }),
     ).toHaveValue("AI agents, design tools, and indie builders");
+
+    await page.getByRole("button", { name: "Clear interests" }).click();
+    await expect(page).toHaveURL(/\/today$/);
+    await expect(
+      page.getByRole("heading", { name: "What are you exploring?" }),
+    ).toBeVisible();
+
+    await page.goto("/archive");
+    await expect(
+      page.getByRole("heading", { name: "No archived digests yet" }),
+    ).toBeVisible();
   });
 });

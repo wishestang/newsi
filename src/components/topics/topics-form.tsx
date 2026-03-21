@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 export function TopicsForm({
   initialValue,
   onSubmitAction,
+  onClearAction,
 }: {
   initialValue: string;
   onSubmitAction: (formData: FormData) => void | Promise<void>;
+  onClearAction: () => void | Promise<void>;
 }) {
   const [timezone, setTimezone] = useState("UTC");
 
@@ -35,6 +37,14 @@ export function TopicsForm({
       <button className="mt-10 bg-stone-950 px-4 py-2 text-sm text-white">
         Save interests
       </button>
+      {initialValue.trim() ? (
+        <button
+          formAction={onClearAction}
+          className="mt-10 ml-4 border border-stone-300 px-4 py-2 text-sm text-stone-700"
+        >
+          Clear interests
+        </button>
+      ) : null}
     </form>
   );
 }

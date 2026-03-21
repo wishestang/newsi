@@ -8,11 +8,26 @@ describe("TopicsForm", () => {
       <TopicsForm
         initialValue=""
         onSubmitAction={vi.fn(async (_formData: FormData) => undefined)}
+        onClearAction={vi.fn(async () => undefined)}
       />,
     );
 
     expect(
       screen.getByRole("button", { name: "Save interests" }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders a clear action when interests already exist", () => {
+    render(
+      <TopicsForm
+        initialValue="AI agents"
+        onSubmitAction={vi.fn(async (_formData: FormData) => undefined)}
+        onClearAction={vi.fn(async () => undefined)}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Clear interests" }),
     ).toBeInTheDocument();
   });
 });
