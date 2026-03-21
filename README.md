@@ -32,6 +32,7 @@ Notes:
 - `AUTH_SECRET` can be generated with `openssl rand -base64 32`.
 - `APP_URL` must match the origin used in your browser and OAuth callback config.
 - If `DATABASE_URL` or Google OAuth env vars are missing, Newsi falls back to local preview mode for UI work.
+- In preview mode, `/signin` exposes an `Open preview` link so the app can be explored without OAuth.
 
 ## Local Database Setup
 
@@ -74,6 +75,16 @@ Useful routes:
 - `/today`
 - `/archive`
 
+## Preview Mode
+
+When auth or persistence is not configured, Newsi runs in a local preview mode:
+
+- `/signin` shows `Open preview`
+- `/topics` saves the standing brief to a cookie
+- `/today` shows either a scheduled state or a mock ready digest, depending on whether the local day has reached `firstEligibleDigestDayKey`
+- `/archive` shows the preview digest row and detail page
+- `Clear interests` removes the preview cookie and resets `Today` and `Archive`
+
 ## Run Tests
 
 Unit and integration tests:
@@ -114,4 +125,5 @@ The route will:
 - `Topics` stores one standing interest brief per user.
 - `Today` shows the current digest state or the ready digest for the user’s local day.
 - `Archive` keeps historical rows and links to detail pages, including non-ready states.
+- Preview mode now simulates both scheduled and ready digest states so the reading surfaces can be validated without live auth, database, or provider credentials.
 - Digest generation uses OpenAI structured outputs plus web search. Missing `LLM_API_KEY` will cause the cron route to fail generation attempts with a clear configuration error.
