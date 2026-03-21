@@ -16,7 +16,7 @@ describe("digest read helpers", () => {
     vi.resetAllMocks();
   });
 
-  it("filters archive items to ready digests only", async () => {
+  it("loads archive items across all digest statuses", async () => {
     mockDb.dailyDigest.findMany.mockResolvedValue([]);
 
     const { listArchivedDigests } = await import("@/lib/digest/service");
@@ -26,7 +26,6 @@ describe("digest read helpers", () => {
     expect(mockDb.dailyDigest.findMany).toHaveBeenCalledWith({
       where: {
         userId: "user-1",
-        status: "ready",
       },
       orderBy: {
         digestDayKey: "desc",
@@ -35,6 +34,7 @@ describe("digest read helpers", () => {
         digestDayKey: true,
         title: true,
         readingTime: true,
+        status: true,
       },
     });
   });

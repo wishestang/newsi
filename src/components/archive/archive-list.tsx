@@ -3,7 +3,12 @@ import Link from "next/link";
 export function ArchiveList({
   items,
 }: {
-  items: { digestDayKey: string; title: string; readingTime: number }[];
+  items: {
+    digestDayKey: string;
+    title: string;
+    readingTime?: number | null;
+    status?: "scheduled" | "generating" | "failed" | "ready";
+  }[];
 }) {
   return (
     <div className="mx-auto max-w-4xl px-10 py-20">
@@ -15,9 +20,29 @@ export function ArchiveList({
         >
           <span>{item.digestDayKey}</span>
           <span>{item.title}</span>
-          <span>{item.readingTime} min</span>
+          <span>{getArchiveMetaLabel(item)}</span>
         </Link>
       ))}
     </div>
   );
+}
+
+function getArchiveMetaLabel(item: {
+  readingTime?: number | null;
+  status?: "scheduled" | "generating" | "failed" | "ready";
+}) {
+  if (typeof item.readingTime === "number") {
+    return `${item.readingTime} min`;
+  }
+
+  switch (item.status) {
+    case "scheduled":
+      return "Scheduled";
+    case "generating":
+      return "Generating";
+    case "failed":
+      return "Failed";
+    default:
+      return "Ready";
+  }
 }

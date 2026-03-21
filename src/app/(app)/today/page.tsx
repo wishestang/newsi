@@ -9,7 +9,10 @@ import {
   getTodayDigest,
   parseStoredDigestContent,
 } from "@/lib/digest/service";
-import { getTodayDigestState } from "@/lib/digest/view-state";
+import {
+  formatScheduledDigestMessage,
+  getTodayDigestState,
+} from "@/lib/digest/view-state";
 import { isLocalPreviewMode } from "@/lib/env";
 
 export default async function TodayPage() {
@@ -95,7 +98,10 @@ export default async function TodayPage() {
     return (
       <StatusPanel
         label="Scheduled"
-        body="Your first digest will appear after the next local 07:00 run."
+        body={formatScheduledDigestMessage({
+          firstEligibleDigestDayKey:
+            user.interestProfile?.firstEligibleDigestDayKey ?? null,
+        })}
       />
     );
   }

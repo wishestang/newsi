@@ -57,7 +57,6 @@ export async function listArchivedDigests(userId: string) {
   return db.dailyDigest.findMany({
     where: {
       userId,
-      status: "ready",
     },
     orderBy: {
       digestDayKey: "desc",
@@ -66,6 +65,7 @@ export async function listArchivedDigests(userId: string) {
       digestDayKey: true,
       title: true,
       readingTime: true,
+      status: true,
     },
   });
 }

@@ -11,11 +11,12 @@ export default async function ArchivePage() {
   if (isLocalPreviewMode()) {
     return (
       <ArchiveList
-        items={[
+      items={[
           {
             digestDayKey: "2026-03-21",
             title: "Today's Synthesis",
             readingTime: 6,
+            status: "ready",
           },
         ]}
       />
@@ -60,11 +61,26 @@ export default async function ArchivePage() {
     <ArchiveList
       items={digests.map((digest) => ({
         digestDayKey: digest.digestDayKey,
-        title: digest.title ?? "Untitled digest",
-        readingTime: digest.readingTime ?? 5,
+        title: digest.title ?? getArchiveDigestTitle(digest.status),
+        readingTime: digest.readingTime,
+        status: digest.status,
       }))}
     />
   );
 }
 
 export const dynamic = "force-dynamic";
+
+function getArchiveDigestTitle(status: "scheduled" | "generating" | "failed" | "ready") {
+  switch (status) {
+    case "scheduled":
+      return "Digest scheduled";
+    case "generating":
+      return "Digest generating";
+    case "failed":
+      return "Digest failed";
+    case "ready":
+    default:
+      return "Untitled digest";
+  }
+}
