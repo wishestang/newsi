@@ -196,24 +196,32 @@ Implement `src/app/(app)/preview/page.tsx` with three states:
 
 Use a protected real-data path when auth/persistence are configured.
 
-- [ ] **Step 5: Add confirm and retry actions**
+- [ ] **Step 5: Wire `generating` to actual preview generation**
+
+Ensure `/preview` does not just render a loading state. It must:
+- trigger `startPreviewDigestGeneration(userId)` on first load when the current preview is still eligible to start
+- avoid duplicate provider calls by respecting the token/start guard in the preview service
+- restart generation after `Try again` refreshes the token
+- re-render to `ready` or `failed` on subsequent load/refresh according to stored preview state
+
+- [ ] **Step 6: Add confirm and retry actions**
 
 Expose server actions from the page so:
 - retry refreshes the token and returns to `generating`
 - confirm activates the profile, recalculates `firstEligibleDigestDayKey`, deletes the preview row, and redirects to `/today`
 
-- [ ] **Step 6: Keep the component boundary focused**
+- [ ] **Step 7: Keep the component boundary focused**
 
 Only extract a dedicated client component if action buttons or polling need it. Avoid creating a generic “preview state machine” component unless the page clearly needs it.
 
-- [ ] **Step 7: Re-run the integration tests**
+- [ ] **Step 8: Re-run the integration tests**
 
 Run:
 - `pnpm exec vitest run tests/integration/topics-form.test.tsx tests/integration/preview-page.test.tsx`
 
 Expected: PASS
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/app/(app)/topics/page.tsx src/app/(app)/preview/page.tsx src/components/topics/topics-form.tsx tests/integration/topics-form.test.tsx tests/integration/preview-page.test.tsx
@@ -277,6 +285,7 @@ git commit -m "feat: separate pending preview from formal digest views"
 
 **Files:**
 - Modify: `src/lib/preview-state.ts`
+- Modify: `src/app/(app)/preview/page.tsx`
 - Modify: `src/app/(app)/topics/page.tsx`
 - Modify: `src/app/(app)/today/page.tsx`
 - Modify: `src/app/(app)/archive/page.tsx`
@@ -323,6 +332,7 @@ Adjust the e2e flow to:
 - confirm
 - reach `Today`
 - keep `Archive` behavior aligned with the new rules
+- include the regression path where an already `active` user edits Topics, falls back to `pending_preview`, cron pauses, and confirmation restores formal eligibility
 
 - [ ] **Step 6: Re-run local preview tests**
 
@@ -335,7 +345,7 @@ Expected: PASS
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/lib/preview-state.ts src/app/(app)/topics/page.tsx src/app/(app)/today/page.tsx src/app/(app)/archive/page.tsx src/app/(app)/archive/[digestDayKey]/page.tsx tests/unit/preview-state.test.ts tests/e2e/newsi-smoke.spec.ts
+git add src/lib/preview-state.ts src/app/(app)/preview/page.tsx src/app/(app)/topics/page.tsx src/app/(app)/today/page.tsx src/app/(app)/archive/page.tsx src/app/(app)/archive/[digestDayKey]/page.tsx tests/unit/preview-state.test.ts tests/e2e/newsi-smoke.spec.ts
 git commit -m "feat: align local preview mode with confirmation flow"
 ```
 
@@ -378,4 +388,3 @@ Check at minimum:
 git add README.md
 git commit -m "docs: describe preview confirmation flow"
 ```
-
