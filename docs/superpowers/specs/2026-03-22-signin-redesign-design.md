@@ -57,7 +57,7 @@ Stacks vertically: brand → headline → subline → login button → preview l
 - Border-radius: 8px
 - Padding: 12px 24px
 - Shadow: `0 1px 2px rgba(0,0,0,0.04)`
-- Content: Google color logo (18×18 SVG) + "Continue with Google"
+- Content: Google color logo (18×18 inline SVG, hardcoded in component) + "Continue with Google"
 - Text: 14px, font-weight 500, `#1a1a1a`
 - Gap between icon and text: 12px
 - Hover: shadow increases to `0 2px 4px rgba(0,0,0,0.08)`
@@ -131,7 +131,7 @@ A white card displaying a static sample digest to preview the product experience
 | Breakpoint | Behavior |
 |------------|----------|
 | ≥768px (md) | Two-column flex row, gap 64px, card visible |
-| <768px | Single column, card hidden, headline 32px, button full-width, text centered optional |
+| <768px | Single column, card hidden, headline 32px, button full-width, left-column text left-aligned |
 
 ### Mobile Adjustments
 - Headline: 32px (down from 38px), line break after "daily" removed (natural wrap)
