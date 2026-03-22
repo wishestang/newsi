@@ -85,6 +85,14 @@
 - `Save interests`
 - 已有内容时保留 `Clear interests`
 
+`Clear interests` 行为：
+
+- 删除当前 `InterestProfile`
+- 删除当前 `PreviewDigest`
+- 立即停止后续 Cron 资格
+- 已有正式 `Archive` 历史继续保留
+- `Today` 回到无配置 empty state
+
 ### 4.2 `Preview`
 
 新增独立路由：`/preview`
@@ -150,6 +158,8 @@
 
 - `none` 不是持久化状态，不写入数据库
 - `none` 仅表示该用户当前没有 `InterestProfile` 记录，是页面层的展示态
+- 对已存在于旧版本中的 `InterestProfile`，migration 回填 `status = active`
+- 回填为 `active` 的原因是保持旧版本用户的既有每日生成行为，不因本次需求改动被整体中断
 
 `firstEligibleDigestDayKey` 的含义调整为：
 
