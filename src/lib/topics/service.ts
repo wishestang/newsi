@@ -3,9 +3,9 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { interestProfileSchema } from "@/lib/topics/schema";
 import {
-  getDigestDayKey,
-  getNextDigestDayKey,
-  hasDailyRunPassed,
+  getBeijingDigestDayKey,
+  getNextBeijingDigestDayKey,
+  hasBeijingDailyRunPassed,
   normalizeTimezone,
 } from "@/lib/timezone";
 
@@ -21,9 +21,9 @@ export async function saveInterestProfile(userId: string, input: unknown) {
 
   const timezone = user.accountTimezone ?? normalizeTimezone(data.browserTimezone);
   const now = new Date();
-  const firstEligibleDigestDayKey = hasDailyRunPassed(timezone, now)
-    ? getNextDigestDayKey(timezone, now)
-    : getDigestDayKey(timezone, now);
+  const firstEligibleDigestDayKey = hasBeijingDailyRunPassed(now)
+    ? getNextBeijingDigestDayKey(now)
+    : getBeijingDigestDayKey(now);
 
   await db.interestProfile.upsert({
     where: { userId },

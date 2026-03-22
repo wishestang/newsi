@@ -98,4 +98,38 @@ describe("saveInterestProfile", () => {
     });
     expect(mockDb.dailyDigest.deleteMany).not.toHaveBeenCalled();
   });
+
+  it("computes firstEligibleDigestDayKey from Beijing time instead of browser timezone", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-21T23:30:00Z"));
+
+    mockDb.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      accountTimezone: null,
+    });
+    mockDb.interestProfile.upsert.mockResolvedValue(undefined);
+    mockDb.previewDigest.upsert.mockResolvedValue(undefined);
+    mockDb.user.update.mockResolvedValue(undefined);
+
+    const { saveInterestProfile } = await import("@/lib/topics/service");
+
+    await saveInterestProfile("user-1", {
+      interestText: "AI agents",
+      browserTimezone: "America/New_York",
+    });
+
+    expect(mockDb.interestProfile.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          firstEligibleDigestDayKey: "2026-03-23",
+        }),
+      }),
+    );
+    expect(mockDb.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { accountTimezone: "America/New_York" },
+    });
+
+    vi.useRealTimers();
+  });
 });
