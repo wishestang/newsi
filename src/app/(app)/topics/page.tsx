@@ -39,7 +39,7 @@ export default async function TopicsPage() {
         maxAge: 60 * 60 * 24 * 30,
       });
 
-      redirect("/today");
+      redirect("/preview");
     }
 
     async function clearTopicsPreview() {
@@ -86,6 +86,8 @@ export default async function TopicsPage() {
 
     revalidatePath("/topics");
     revalidatePath("/today");
+    revalidatePath("/preview");
+    redirect("/preview");
   }
 
   async function clearTopics() {
