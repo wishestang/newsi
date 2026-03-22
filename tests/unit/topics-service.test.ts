@@ -9,6 +9,13 @@ const mockDb = {
     upsert: vi.fn(),
     deleteMany: vi.fn(),
   },
+  previewDigest: {
+    upsert: vi.fn(),
+    deleteMany: vi.fn(),
+  },
+  dailyDigest: {
+    deleteMany: vi.fn(),
+  },
 };
 
 vi.mock("@/lib/db", () => ({
@@ -40,8 +47,30 @@ describe("saveInterestProfile", () => {
 
     expect(mockDb.interestProfile.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
+        update: expect.objectContaining({
+          interestText: "AI agents",
+          status: "pending_preview",
+        }),
         create: expect.objectContaining({
+          interestText: "AI agents",
+          status: "pending_preview",
           firstEligibleDigestDayKey: "2026-03-22",
+        }),
+      }),
+    );
+    expect(mockDb.previewDigest.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user-1" },
+        update: expect.objectContaining({
+          interestTextSnapshot: "AI agents",
+          status: "generating",
+          generationToken: expect.any(String),
+        }),
+        create: expect.objectContaining({
+          userId: "user-1",
+          interestTextSnapshot: "AI agents",
+          status: "generating",
+          generationToken: expect.any(String),
         }),
       }),
     );
@@ -55,6 +84,7 @@ describe("saveInterestProfile", () => {
 
   it("clears the saved interest profile for a user", async () => {
     mockDb.interestProfile.deleteMany.mockResolvedValue({ count: 1 });
+    mockDb.previewDigest.deleteMany.mockResolvedValue({ count: 1 });
 
     const { clearInterestProfile } = await import("@/lib/topics/service");
 
@@ -63,5 +93,9 @@ describe("saveInterestProfile", () => {
     expect(mockDb.interestProfile.deleteMany).toHaveBeenCalledWith({
       where: { userId: "user-1" },
     });
+    expect(mockDb.previewDigest.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+    });
+    expect(mockDb.dailyDigest.deleteMany).not.toHaveBeenCalled();
   });
 });

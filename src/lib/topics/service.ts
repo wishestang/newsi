@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { interestProfileSchema } from "@/lib/topics/schema";
 import {
@@ -27,11 +29,35 @@ export async function saveInterestProfile(userId: string, input: unknown) {
     where: { userId },
     update: {
       interestText: data.interestText,
+      status: "pending_preview",
     },
     create: {
       userId,
       interestText: data.interestText,
+      status: "pending_preview",
       firstEligibleDigestDayKey,
+    },
+  });
+
+  await db.previewDigest.upsert({
+    where: { userId },
+    update: {
+      generationToken: randomUUID(),
+      interestTextSnapshot: data.interestText,
+      status: "generating",
+      title: null,
+      intro: null,
+      contentJson: Prisma.DbNull,
+      readingTime: null,
+      providerName: null,
+      providerModel: null,
+      failureReason: null,
+    },
+    create: {
+      userId,
+      generationToken: randomUUID(),
+      interestTextSnapshot: data.interestText,
+      status: "generating",
     },
   });
 
@@ -47,6 +73,10 @@ export async function clearInterestProfile(userId: string) {
   if (!db) {
     throw new Error("Persistence is not configured.");
   }
+
+  await db.previewDigest.deleteMany({
+    where: { userId },
+  });
 
   await db.interestProfile.deleteMany({
     where: { userId },

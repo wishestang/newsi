@@ -13,6 +13,17 @@ enum DigestStatus {
   ready
 }
 
+enum InterestProfileStatus {
+  pending_preview
+  active
+}
+
+enum PreviewDigestStatus {
+  generating
+  failed
+  ready
+}
+
 model User {
   id              String           @id @default(cuid())
   name            String?
@@ -23,6 +34,7 @@ model User {
   accounts        Account[]
   sessions        Session[]
   interestProfile InterestProfile?
+  previewDigest   PreviewDigest?
   dailyDigests    DailyDigest[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -66,9 +78,28 @@ model InterestProfile {
   id                        String   @id @default(cuid())
   userId                    String   @unique
   interestText              String
+  status                    InterestProfileStatus @default(active)
   firstEligibleDigestDayKey String
   updatedAt                 DateTime @updatedAt
   user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PreviewDigest {
+  id                 String              @id @default(cuid())
+  userId             String              @unique
+  generationToken    String
+  interestTextSnapshot String
+  status             PreviewDigestStatus
+  title              String?
+  intro              String?
+  contentJson        Json?
+  readingTime        Int?
+  providerName       String?
+  providerModel      String?
+  failureReason      String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DailyDigest {
