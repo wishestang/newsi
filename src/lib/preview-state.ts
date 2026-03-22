@@ -135,22 +135,31 @@ export function confirmPreviewInterestProfile(
   profile: PreviewInterestProfile,
   now = new Date(),
 ) {
-  if (profile.preview.status !== "ready" || !profile.preview.digest) {
+  const previewDigest = profile.preview.digest;
+
+  if (profile.preview.status !== "ready" || !previewDigest) {
     throw new Error("Preview digest is not ready yet.");
   }
 
   return {
     ...profile,
-    firstEligibleDigestDayKey: hasDailyRunPassed(profile.timezone, now)
-      ? getNextDigestDayKey(profile.timezone, now)
-      : getDigestDayKey(profile.timezone, now),
+    firstEligibleDigestDayKey: getNextDigestDayKey(profile.timezone, now),
     status: "active",
+    preview: {
+      status: "ready",
+      generationToken: profile.preview.generationToken,
+    },
+    activeDigest: {
+      digestDayKey: getDigestDayKey(profile.timezone, now),
+      digest: previewDigest,
+    },
   } satisfies PreviewInterestProfile;
 }
 
 export type LocalTodayState =
   | { status: "unconfigured" }
   | { status: "pending_preview" }
+  | { status: "ready"; digestDayKey: string; digest: DigestResponse }
   | { status: "scheduled"; firstEligibleDigestDayKey: string };
 
 export function getLocalTodayState(
@@ -164,6 +173,18 @@ export function getLocalTodayState(
     return { status: "pending_preview" };
   }
 
+  if (profile.activeDigest) {
+    const todayDigestDayKey = getDigestDayKey(profile.timezone);
+
+    if (profile.activeDigest.digestDayKey === todayDigestDayKey) {
+      return {
+        status: "ready",
+        digestDayKey: profile.activeDigest.digestDayKey,
+        digest: profile.activeDigest.digest,
+      };
+    }
+  }
+
   return {
     status: "scheduled",
     firstEligibleDigestDayKey: profile.firstEligibleDigestDayKey,
@@ -173,8 +194,18 @@ export function getLocalTodayState(
 export function getLocalArchiveItems(
   profile: PreviewInterestProfile | null,
 ): LocalArchiveItem[] {
-  void profile;
-  return [];
+  if (!profile?.activeDigest) {
+    return [];
+  }
+
+  return [
+    {
+      digestDayKey: profile.activeDigest.digestDayKey,
+      title: profile.activeDigest.digest.title,
+      status: "ready",
+      readingTime: profile.activeDigest.digest.readingTime,
+    },
+  ];
 }
 
 function buildPreviewDigest(interestText: string): DigestResponse {

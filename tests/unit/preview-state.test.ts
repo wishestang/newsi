@@ -80,7 +80,7 @@ describe("preview state", () => {
     expect(completePreviewGeneration(profile, "token-2")).toEqual(profile);
   });
 
-  it("confirms a ready preview into an active scheduled profile without creating archive content", async () => {
+  it("confirms a ready preview into an active profile with today's digest available immediately", async () => {
     const { confirmPreviewInterestProfile, getLocalTodayState, getLocalArchiveItems } =
       await import("@/lib/preview-state");
 
@@ -109,9 +109,19 @@ describe("preview state", () => {
     );
 
     expect(getLocalTodayState(confirmed)).toMatchObject({
-      status: "scheduled",
-      firstEligibleDigestDayKey: "2026-03-23",
+      status: "ready",
+      digestDayKey: "2026-03-22",
+      digest: {
+        title: "Today's Synthesis",
+      },
     });
-    expect(getLocalArchiveItems(confirmed)).toEqual([]);
+    expect(getLocalArchiveItems(confirmed)).toMatchObject([
+      {
+        digestDayKey: "2026-03-22",
+        title: "Today's Synthesis",
+        status: "ready",
+        readingTime: 5,
+      },
+    ]);
   });
 });

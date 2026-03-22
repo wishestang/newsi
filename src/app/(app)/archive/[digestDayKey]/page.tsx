@@ -36,6 +36,18 @@ export default async function ArchiveDetailPage({
     if (!archiveItem) {
       notFound();
     }
+
+    if (!previewProfile.activeDigest || previewProfile.activeDigest.digestDayKey !== digestDayKey) {
+      notFound();
+    }
+
+    return (
+      <DigestView
+        title={previewProfile.activeDigest.digest.title}
+        intro={previewProfile.activeDigest.digest.intro}
+        sections={previewProfile.activeDigest.digest.sections}
+      />
+    );
   }
 
   if (!db) {

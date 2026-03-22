@@ -62,6 +62,16 @@ export default async function TodayPage() {
       );
     }
 
+    if (previewState.status === "ready") {
+      return (
+        <DigestView
+          title={previewState.digest.title}
+          intro={previewState.digest.intro}
+          sections={previewState.digest.sections}
+        />
+      );
+    }
+
     if (previewState.status === "scheduled") {
       return (
         <StatusPanel

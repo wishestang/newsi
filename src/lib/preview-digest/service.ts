@@ -7,7 +7,6 @@ import type { DigestResponse } from "@/lib/digest/schema";
 import {
   getDigestDayKey,
   getNextDigestDayKey,
-  hasDailyRunPassed,
   normalizeTimezone,
 } from "@/lib/timezone";
 
@@ -169,11 +168,42 @@ export async function confirmPreviewDigest(userId: string, now = new Date()) {
     where: { id: userId },
   });
   const timezone = normalizeTimezone(user.accountTimezone);
-  const firstEligibleDigestDayKey = hasDailyRunPassed(timezone, now)
-    ? getNextDigestDayKey(timezone, now)
-    : getDigestDayKey(timezone, now);
+  const digestDayKey = getDigestDayKey(timezone, now);
+  const firstEligibleDigestDayKey = getNextDigestDayKey(timezone, now);
+  const contentJson = previewDigest.contentJson ?? Prisma.JsonNull;
 
   await db.$transaction(async (tx) => {
+    await tx.dailyDigest.upsert({
+      where: {
+        userId_digestDayKey: {
+          userId,
+          digestDayKey,
+        },
+      },
+      update: {
+        status: "ready",
+        title: previewDigest.title,
+        intro: previewDigest.intro,
+        contentJson,
+        readingTime: previewDigest.readingTime,
+        providerName: previewDigest.providerName,
+        providerModel: previewDigest.providerModel,
+        failureReason: null,
+      },
+      create: {
+        userId,
+        digestDayKey,
+        status: "ready",
+        title: previewDigest.title,
+        intro: previewDigest.intro,
+        contentJson,
+        readingTime: previewDigest.readingTime,
+        providerName: previewDigest.providerName,
+        providerModel: previewDigest.providerModel,
+        failureReason: null,
+      },
+    });
+
     await tx.interestProfile.update({
       where: { userId },
       data: {

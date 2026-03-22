@@ -5,6 +5,9 @@ const mockDb = {
     findUnique: vi.fn(),
     update: vi.fn(),
   },
+  dailyDigest: {
+    upsert: vi.fn(),
+  },
   previewDigest: {
     findUnique: vi.fn(),
     updateMany: vi.fn(),
@@ -172,5 +175,86 @@ describe("preview digest service", () => {
     await expect(confirmPreviewDigest("user-1")).rejects.toThrow(
       "Preview digest is stale. Regenerate it from the latest Topics.",
     );
+  });
+
+  it("promotes a ready preview into today's formal digest on confirm", async () => {
+    mockDb.previewDigest.findUnique.mockResolvedValue({
+      userId: "user-1",
+      interestTextSnapshot: "AI agents",
+      generationToken: "token-1",
+      status: "ready",
+      title: "Today's Synthesis",
+      intro: "Preview intro",
+      readingTime: 5,
+      contentJson: {
+        title: "Today's Synthesis",
+        intro: "Preview intro",
+        readingTime: 5,
+        sections: [
+          { title: "A", summary: ["a", "b"], keyPoints: ["c", "d"] },
+          { title: "B", summary: ["a", "b"], keyPoints: ["c", "d"] },
+          { title: "C", summary: ["a", "b"], keyPoints: ["c", "d"] },
+        ],
+      },
+      providerName: "gemini",
+      providerModel: "gemini-2.5-flash",
+    });
+    mockDb.interestProfile.findUnique.mockResolvedValue({
+      userId: "user-1",
+      interestText: "AI agents",
+    });
+    mockDb.user.findUniqueOrThrow.mockResolvedValue({
+      id: "user-1",
+      accountTimezone: "Asia/Shanghai",
+    });
+
+    const { confirmPreviewDigest } = await import("@/lib/preview-digest/service");
+
+    await confirmPreviewDigest("user-1", new Date("2026-03-22T09:00:00+08:00"));
+
+    expect(mockDb.dailyDigest.upsert).toHaveBeenCalledWith({
+      where: {
+        userId_digestDayKey: {
+          userId: "user-1",
+          digestDayKey: "2026-03-22",
+        },
+      },
+      update: {
+        status: "ready",
+        title: "Today's Synthesis",
+        intro: "Preview intro",
+        contentJson: expect.objectContaining({
+          title: "Today's Synthesis",
+        }),
+        readingTime: 5,
+        providerName: "gemini",
+        providerModel: "gemini-2.5-flash",
+        failureReason: null,
+      },
+      create: {
+        userId: "user-1",
+        digestDayKey: "2026-03-22",
+        status: "ready",
+        title: "Today's Synthesis",
+        intro: "Preview intro",
+        contentJson: expect.objectContaining({
+          title: "Today's Synthesis",
+        }),
+        readingTime: 5,
+        providerName: "gemini",
+        providerModel: "gemini-2.5-flash",
+        failureReason: null,
+      },
+    });
+    expect(mockDb.interestProfile.update).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+      data: {
+        status: "active",
+        firstEligibleDigestDayKey: "2026-03-23",
+      },
+    });
+    expect(mockDb.previewDigest.delete).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+    });
   });
 });
