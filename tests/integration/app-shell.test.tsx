@@ -15,7 +15,7 @@ describe("AppShell", () => {
     );
 
     expect(screen.getByText("Today")).toBeInTheDocument();
-    expect(screen.getByText("Archive")).toBeInTheDocument();
+    expect(screen.getByText("History")).toBeInTheDocument();
     expect(screen.getByText("Topics")).toBeInTheDocument();
   });
 
