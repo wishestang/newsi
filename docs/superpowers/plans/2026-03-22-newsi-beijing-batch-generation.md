@@ -20,6 +20,10 @@
   - Compute `firstEligibleDigestDayKey` from Beijing time instead of user/browser timezone.
 - `src/lib/digest/service.ts`
   - Remove per-user timezone gating and switch to one Beijing batch window and shared Beijing `digestDayKey`.
+- `src/lib/preview-digest/service.ts`
+  - Promote confirmed previews into a Beijing-day formal digest and advance eligibility by Beijing day.
+- `src/app/(app)/today/page.tsx`
+  - Read formal digests using Beijing-day semantics and update failed-state copy so it no longer promises same-day auto retry.
 - `src/lib/digest/view-state.ts`
   - Update scheduled-state copy from `local 07:00` to `Beijing 07:00`.
 - `tests/unit/timezone.test.ts`
@@ -30,6 +34,8 @@
   - Assert new Beijing copy.
 - `tests/unit/digest-orchestration.test.ts`
   - Cover active-only batch behavior with one shared Beijing `digestDayKey`.
+- `tests/unit/preview-digest-service.test.ts`
+  - Assert preview confirmation writes and advances using Beijing-day semantics.
 - `tests/unit/cron-digests-route.test.ts`
   - Keep route behavior stable while result semantics reflect batch scheduling.
 - `README.md`
@@ -258,9 +264,75 @@ git add src/lib/digest/service.ts tests/unit/digest-orchestration.test.ts
 git commit -m "refactor: batch formal digest generation by Beijing time"
 ```
 
-## Task 4: Update Scheduled Copy to Beijing Time
+## Task 4: Align Preview Confirmation and Today Reads to Beijing Day Keys
 
 **Files:**
+- Modify: `src/lib/preview-digest/service.ts`
+- Modify: `src/lib/digest/service.ts`
+- Modify: `src/app/(app)/today/page.tsx`
+- Test: `tests/unit/preview-digest-service.test.ts`
+
+- [ ] **Step 1: Write the failing test**
+
+Extend `tests/unit/preview-digest-service.test.ts` with a case that proves confirm promotion ignores `accountTimezone`:
+
+```ts
+it("promotes a confirmed preview into the Beijing-day digest and advances to the next Beijing day", async () => {
+  // arrange previewDigest.status = "ready"
+  // arrange interestProfile.interestText matches the snapshot
+  // arrange user.accountTimezone = "America/New_York"
+  // confirm at 2026-03-22T00:30:00Z, which is 2026-03-22 08:30 in Beijing
+  // expect dailyDigest.upsert to use digestDayKey "2026-03-22"
+  // expect interestProfile.update to set firstEligibleDigestDayKey "2026-03-23"
+});
+```
+
+Add or extend a digest read test so `getTodayDigest()` also resolves the Beijing-day key regardless of user timezone input.
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run:
+
+```bash
+pnpm exec vitest run tests/unit/preview-digest-service.test.ts tests/unit/digest-read-service.test.ts
+```
+
+Expected: FAIL because confirm promotion and formal today reads still depend on user timezone.
+
+- [ ] **Step 3: Write minimal implementation**
+
+Update:
+
+- `src/lib/preview-digest/service.ts`
+  - replace `getDigestDayKey(timezone, now)` with Beijing-day helper usage
+  - replace `getNextDigestDayKey(timezone, now)` with Beijing-next-day helper usage
+  - stop deriving confirm promotion from `accountTimezone`
+- `src/lib/digest/service.ts`
+  - make `getTodayDigest()` resolve the Beijing-day key
+- `src/app/(app)/today/page.tsx`
+  - remove the user-timezone argument from `getTodayDigest()`
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run:
+
+```bash
+pnpm exec vitest run tests/unit/preview-digest-service.test.ts tests/unit/digest-read-service.test.ts
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/lib/preview-digest/service.ts src/lib/digest/service.ts 'src/app/(app)/today/page.tsx' tests/unit/preview-digest-service.test.ts tests/unit/digest-read-service.test.ts
+git commit -m "refactor: align preview promotion and today reads with Beijing digests"
+```
+
+## Task 5: Update Scheduled and Failed Copy for Daily Batch Semantics
+
+**Files:**
+- Modify: `src/app/(app)/today/page.tsx`
 - Modify: `src/lib/digest/view-state.ts`
 - Test: `tests/unit/digest-view-state.test.ts`
 
@@ -278,6 +350,8 @@ expect(formatScheduledDigestMessage({ firstEligibleDigestDayKey: null })).toBe(
 );
 ```
 
+Add a UI-level assertion for the failed-state semantics if a focused integration or unit test already covers `Today` copy. If there is no narrow test today, add one minimal assertion in the most local existing test file that proves failed copy no longer says `retry automatically`.
+
 - [ ] **Step 2: Run test to verify it fails**
 
 Run:
@@ -290,7 +364,14 @@ Expected: FAIL because the code still returns `local 07:00`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Update `formatScheduledDigestMessage()` in `src/lib/digest/view-state.ts` to return the new Beijing-specific copy.
+Update:
+
+- `formatScheduledDigestMessage()` in `src/lib/digest/view-state.ts` to return the new Beijing-specific copy
+- the failed branch in `'src/app/(app)/today/page.tsx'` so it no longer promises same-day automatic retry, for example:
+
+```ts
+body="Today's digest failed in the Beijing morning batch. The next batch will run tomorrow at 07:00 Beijing time."
+```
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -305,11 +386,11 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/lib/digest/view-state.ts tests/unit/digest-view-state.test.ts
-git commit -m "copy: clarify Beijing digest schedule"
+git add src/lib/digest/view-state.ts 'src/app/(app)/today/page.tsx' tests/unit/digest-view-state.test.ts
+git commit -m "copy: clarify Beijing batch digest states"
 ```
 
-## Task 5: Update Route Semantics Docs and Deployment Cron
+## Task 6: Update Route Semantics Docs and Deployment Cron
 
 **Files:**
 - Modify: `vercel.json`
@@ -371,6 +452,7 @@ Update:
   - replace “local 07:00” language with “Beijing 07:00”
   - document that formal digests are generated once per day in one Beijing-time batch
   - mention that preview confirmation still promotes immediately into Today and History
+  - remove any implication that failed digests will be retried again later the same day
 
 - [ ] **Step 4: Run focused verification**
 
@@ -378,7 +460,7 @@ Run:
 
 ```bash
 pnpm exec vitest run tests/unit/cron-digests-route.test.ts
-pnpm exec eslint . README.md src/lib/timezone.ts src/lib/topics/service.ts src/lib/digest/service.ts src/lib/digest/view-state.ts tests/unit/timezone.test.ts tests/unit/topics-service.test.ts tests/unit/digest-orchestration.test.ts tests/unit/digest-view-state.test.ts tests/unit/cron-digests-route.test.ts
+pnpm exec eslint . README.md src/lib/timezone.ts src/lib/topics/service.ts src/lib/digest/service.ts src/lib/preview-digest/service.ts 'src/app/(app)/today/page.tsx' src/lib/digest/view-state.ts tests/unit/timezone.test.ts tests/unit/topics-service.test.ts tests/unit/digest-orchestration.test.ts tests/unit/preview-digest-service.test.ts tests/unit/digest-view-state.test.ts tests/unit/cron-digests-route.test.ts
 ```
 
 Expected: PASS.
@@ -390,7 +472,7 @@ git add vercel.json README.md tests/unit/cron-digests-route.test.ts
 git commit -m "docs: align deployment with Beijing batch digests"
 ```
 
-## Task 6: Full Regression Verification
+## Task 7: Full Regression Verification
 
 **Files:**
 - Verify only
@@ -443,4 +525,3 @@ If this task required no code changes, skip commit. If any final test-driven fix
 git add <files touched during regression fixes>
 git commit -m "test: finalize Beijing batch generation rollout"
 ```
-

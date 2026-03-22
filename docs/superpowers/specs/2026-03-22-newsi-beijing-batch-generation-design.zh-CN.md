@@ -38,6 +38,13 @@
 
 用户 `accountTimezone` 仍然保留，但不再参与正式日报调度判断。
 
+同时必须把正式 digest 的读写路径一起统一到北京时间语义：
+
+- `Today` 读取正式 digest 时，按北京时间 day key 查询
+- preview confirm 提升为正式 digest 时，按北京时间 day key 写入
+
+如果只改 cron 而不改这两条路径，非北京时间用户会出现“成功确认/生成了日报，但 Today 查到另一日 key”的错误状态。
+
 ## 核心行为
 
 ### 1. 正式日报调度
@@ -68,6 +75,11 @@ preview confirm 行为保持不变：
 
 提升后的 `digestDayKey` 改为北京时间当天日期。
 
+这意味着 preview confirm 服务层也必须同步改造：
+
+- 不再使用 `accountTimezone` 推导 confirm 当日的正式 `digestDayKey`
+- confirm 后推进的 `firstEligibleDigestDayKey` 也必须基于北京时间下一天
+
 ### 4. Confirm 后的未来生成
 
 用户确认 preview 后：
@@ -80,6 +92,15 @@ preview confirm 行为保持不变：
 
 - 当天不会被 cron 重复覆盖
 - 首日体验仍然是即时可读
+
+### 5. Today 读取
+
+`Today` 页面读取正式内容时，也必须改为北京时间语义：
+
+- `getTodayDigest()` 不再按用户时区或 `accountTimezone` 计算 day key
+- `Today` 读取北京时间当天的 `DailyDigest`
+
+这样 cron 写入、preview confirm 提升写入、Today 读取展示三者才能保持一致。
 
 ## UI 与文案变化
 
@@ -136,7 +157,21 @@ preview confirm 行为保持不变：
 - 批次层统一判断北京时间是否过 `07:00`
 - 所有 active 用户使用同一个北京时间 `digestDayKey`
 
-### 4. Today 视图文案
+### 4. Preview Confirm 与 Today 读取
+
+文件：
+
+- [src/lib/preview-digest/service.ts](/Users/bytedance/Documents/newsi/src/lib/preview-digest/service.ts)
+- [src/app/(app)/today/page.tsx](/Users/bytedance/Documents/newsi/src/app/(app)/today/page.tsx)
+- [src/lib/digest/service.ts](/Users/bytedance/Documents/newsi/src/lib/digest/service.ts)
+
+变更点：
+
+- `confirmPreviewDigest()` 的正式 digest 提升逻辑改为使用北京时间 `digestDayKey`
+- confirm 后的 `firstEligibleDigestDayKey` 改为北京时间下一天
+- `Today` 的正式 digest 读取逻辑改为使用北京时间 day key
+
+### 5. Today 视图文案
 
 文件：
 
@@ -147,15 +182,25 @@ preview confirm 行为保持不变：
 
 - scheduled 文案从 `local 07:00` 改为 `Beijing 07:00`
 
-### 5. 部署配置
+### 6. 失败恢复与部署配置
 
 文件：
 
 - [vercel.json](/Users/bytedance/Documents/newsi/vercel.json)
+- [src/lib/digest/service.ts](/Users/bytedance/Documents/newsi/src/lib/digest/service.ts)
+- [src/app/(app)/today/page.tsx](/Users/bytedance/Documents/newsi/src/app/(app)/today/page.tsx)
 
 变更点：
 
 - Cron 从“每小时一次”调整为“每天一次”
+- 原先同日自动重试语义必须同步收口
+
+因为每天只触发一次 cron，原本依赖“当天后续小时级再试一次”的恢复路径不再成立。本次明确采用：
+
+- 每天北京时间 07:00 批处理只尝试一次正式生成
+- 当天失败记录保留为 `failed`
+- Today 文案不再承诺“系统会在当天稍后自动重试”
+- 次日北京时间批次会生成新的下一日 digest，不回填昨天
 
 注：Vercel 使用 UTC schedule 时，需要将北京时间 `07:00` 换算成对应 UTC 时间表达式后再写入配置。
 
@@ -167,16 +212,21 @@ preview confirm 行为保持不变：
   - 北京时间 `07:00` 前后的 day key 与 cutoff 判定
 - `topics service`：
   - 保存 Topics 时，`firstEligibleDigestDayKey` 改为按北京时间计算
+- `preview digest service`：
+  - confirm 提升使用北京时间 day key
 - `digest view state`：
   - scheduled 文案改为北京时间表述
 - `digest service`：
   - 批处理不再因用户时区不同而分叉
+  - Today / confirm / cron 共用同一套北京时间 day key
+  - failed 路径不再隐含同日小时级自动重试
 
 ### 集成与 e2e
 
 - `Preview -> Confirm -> Today -> History` 流程保持通过
 - 确认后 Today 和 History 仍即时可读
 - 定时任务相关测试改为北京时间批处理语义
+- 海外用户账号在 confirm 后，Today 仍然能读取到当天正式稿
 
 ## 风险与取舍
 
@@ -192,21 +242,27 @@ preview confirm 行为保持不变：
 
 实现时必须明确使用 UTC cron 表达式换算到北京时间 `07:00`，避免部署后跑在错误时刻。
 
+### 风险 4：每天一次调度会降低失败恢复能力
+
+这是免费部署方案的直接代价。若后续发现偶发失败影响过大，再单独设计“手动补跑”或“后台回填”能力，而不是继续依赖小时级自动重试假设。
+
 ## 推荐实现顺序
 
 1. 先写失败测试，覆盖北京时间调度语义
 2. 改 `timezone` / 调度 helper
 3. 改 `topics service`
 4. 改 `digest service`
-5. 改 `Today` 文案与 README
-6. 改 `vercel.json`
-7. 运行 `tsc`、`eslint`、`vitest`、相关 smoke test
+5. 改 `preview-digest service` 与 `Today` 读取逻辑
+6. 改 `Today` / failed 文案与 README
+7. 改 `vercel.json`
+8. 运行 `tsc`、`eslint`、`vitest`、相关 smoke test
 
 ## 验收标准
 
 - 正式日报调度只基于北京时间 `07:00`
 - active 用户在每天北京时间批处理中共享同一 `digestDayKey`
+- Today 读取、preview confirm 提升、cron 写入使用同一套北京时间 `digestDayKey`
 - preview confirm 后 Today 与 History 当天立即可读
 - scheduled 文案不再出现 `local 07:00`
+- Today/README 不再承诺同日小时级自动重试
 - `vercel.json` 不再使用每小时一次调度
-
