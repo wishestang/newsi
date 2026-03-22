@@ -12,15 +12,30 @@ describe("getTodayDigestState", () => {
   });
 
   it("returns scheduled when the user has interests but no digest yet", () => {
-    expect(getTodayDigestState({ hasInterestProfile: true, digest: null })).toBe(
-      "scheduled",
-    );
+    expect(
+      getTodayDigestState({
+        hasInterestProfile: true,
+        profileStatus: "active",
+        digest: null,
+      }),
+    ).toBe("scheduled");
+  });
+
+  it("returns pending preview confirmation when interests are not active yet", () => {
+    expect(
+      getTodayDigestState({
+        hasInterestProfile: true,
+        profileStatus: "pending_preview",
+        digest: null,
+      }),
+    ).toBe("pending_preview_confirmation");
   });
 
   it("returns the stored digest status when a digest exists", () => {
     expect(
       getTodayDigestState({
         hasInterestProfile: true,
+        profileStatus: "active",
         digest: { status: "failed" },
       }),
     ).toBe("failed");

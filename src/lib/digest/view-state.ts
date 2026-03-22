@@ -2,6 +2,7 @@ import { format, parseISO } from "date-fns";
 
 export type TodayDigestState =
   | "unconfigured"
+  | "pending_preview_confirmation"
   | "scheduled"
   | "generating"
   | "failed"
@@ -9,13 +10,19 @@ export type TodayDigestState =
 
 export function getTodayDigestState({
   hasInterestProfile,
+  profileStatus,
   digest,
 }: {
   hasInterestProfile: boolean;
+  profileStatus?: "pending_preview" | "active" | null;
   digest: { status: Exclude<TodayDigestState, "unconfigured" | "scheduled"> | "scheduled" } | null;
 }): TodayDigestState {
   if (!hasInterestProfile) {
     return "unconfigured";
+  }
+
+  if (profileStatus === "pending_preview") {
+    return "pending_preview_confirmation";
   }
 
   if (!digest) {

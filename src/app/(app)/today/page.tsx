@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -90,6 +91,7 @@ export default async function TodayPage() {
 
   const state = getTodayDigestState({
     hasInterestProfile: Boolean(user.interestProfile),
+    profileStatus: user.interestProfile?.status ?? null,
     digest: digest ? { status: digest.status } : null,
   });
 
@@ -111,6 +113,28 @@ export default async function TodayPage() {
             user.interestProfile?.firstEligibleDigestDayKey ?? null,
         })}
       />
+    );
+  }
+
+  if (state === "pending_preview_confirmation") {
+    return (
+      <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center px-10 py-20">
+        <p className="text-xs uppercase tracking-[0.32em] text-stone-400">
+          Preview required
+        </p>
+        <p className="mt-6 max-w-2xl text-lg leading-8 text-stone-600">
+          You have a preview digest waiting for confirmation. Continue preview to
+          start daily digests for your current Topics.
+        </p>
+        <div className="mt-10">
+          <Link
+            href="/preview"
+            className="inline-flex bg-stone-950 px-4 py-2 text-sm text-white"
+          >
+            Continue preview
+          </Link>
+        </div>
+      </section>
     );
   }
 
