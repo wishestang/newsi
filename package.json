@@ -8,6 +8,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "db:generate": "prisma generate",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "vercel-build": "pnpm db:generate && pnpm db:migrate:deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
