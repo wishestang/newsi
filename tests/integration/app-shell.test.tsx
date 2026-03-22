@@ -165,4 +165,26 @@ describe("AppShell", () => {
     expect(within(panel).getByText("Ada Lovelace")).toBeInTheDocument();
     expect(within(panel).getByText("ada@example.com")).toBeInTheDocument();
   });
+
+  it("closes the account panel on repeated trigger clicks and outside clicks", () => {
+    render(
+      <AppShell user={demoUser}>
+        <div>Body</div>
+      </AppShell>,
+    );
+
+    const accountTrigger = screen.getByRole("button", { name: /ada lovelace/i });
+
+    fireEvent.click(accountTrigger);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    fireEvent.click(accountTrigger);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(accountTrigger);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });
