@@ -69,6 +69,7 @@ Expected: PASS
 - [ ] **Step 7: Validate Prisma artifacts**
 
 Run:
+- `pnpm exec prisma generate`
 - `pnpm exec prisma validate --schema prisma/schema.prisma`
 - `pnpm exec tsc --noEmit`
 
@@ -93,6 +94,7 @@ git commit -m "feat: add preview confirmation data model"
 
 Cover:
 - starting preview generation only succeeds when the record is still `generating`
+- starting preview generation is protected by an atomic one-time start claim so repeated `/preview` loads do not launch duplicate provider calls
 - ready preview writes the provider output and metadata
 - stale `generationToken` results are discarded
 - retry refreshes `generationToken`
@@ -118,6 +120,7 @@ Implement focused functions in `src/lib/preview-digest/service.ts`, for example:
 
 Service rules:
 - provider generation uses the same digest schema as formal digests
+- the service must perform an atomic claim before provider invocation, such as a conditional update that only one caller can win
 - writeback must compare the stored `generationToken`
 - stale writes must no-op
 - confirmation must compare `interestTextSnapshot` to the current `InterestProfile.interestText`
@@ -237,6 +240,7 @@ git commit -m "feat: add preview confirmation route"
 - Modify: `src/lib/digest/view-state.ts`
 - Modify: `src/app/api/cron/digests/route.ts` only if response semantics need tests updated
 - Test: `tests/unit/cron-digests-route.test.ts`
+- Test: `tests/unit/digest-view-state.test.ts`
 - Test: `tests/integration/archive-list.test.tsx`
 - Test: `tests/integration/status-panel.test.tsx`
 
@@ -251,7 +255,7 @@ Cover:
 - [ ] **Step 2: Run the targeted tests to verify they fail**
 
 Run:
-- `pnpm exec vitest run tests/unit/cron-digests-route.test.ts tests/integration/archive-list.test.tsx tests/integration/status-panel.test.tsx`
+- `pnpm exec vitest run tests/unit/cron-digests-route.test.ts tests/unit/digest-view-state.test.ts tests/integration/archive-list.test.tsx tests/integration/status-panel.test.tsx`
 
 Expected: FAIL because the new pending-preview branch is not implemented yet.
 
@@ -270,14 +274,14 @@ Do not leak `PreviewDigest` into `ArchiveList`, `DailyDigest`, or cron persisten
 - [ ] **Step 5: Re-run the targeted tests**
 
 Run:
-- `pnpm exec vitest run tests/unit/cron-digests-route.test.ts tests/integration/archive-list.test.tsx tests/integration/status-panel.test.tsx`
+- `pnpm exec vitest run tests/unit/cron-digests-route.test.ts tests/unit/digest-view-state.test.ts tests/integration/archive-list.test.tsx tests/integration/status-panel.test.tsx`
 
 Expected: PASS
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/app/(app)/today/page.tsx src/app/(app)/archive/page.tsx src/app/(app)/archive/[digestDayKey]/page.tsx src/lib/digest/view-state.ts src/app/api/cron/digests/route.ts tests/unit/cron-digests-route.test.ts tests/integration/archive-list.test.tsx tests/integration/status-panel.test.tsx
+git add src/app/(app)/today/page.tsx src/app/(app)/archive/page.tsx src/app/(app)/archive/[digestDayKey]/page.tsx src/lib/digest/view-state.ts src/app/api/cron/digests/route.ts tests/unit/cron-digests-route.test.ts tests/unit/digest-view-state.test.ts tests/integration/archive-list.test.tsx tests/integration/status-panel.test.tsx
 git commit -m "feat: separate pending preview from formal digest views"
 ```
 
@@ -353,7 +357,7 @@ git commit -m "feat: align local preview mode with confirmation flow"
 
 **Files:**
 - Modify: `README.md`
-- Optionally modify: `.env.example` only if no new envs were added, otherwise skip
+- Optionally modify: `.env.example` only if implementation introduces any new envs; otherwise skip it
 
 - [ ] **Step 1: Update docs for the new flow**
 
