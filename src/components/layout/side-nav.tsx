@@ -3,19 +3,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import {
-  CalendarOutlined,
-  InboxOutlined,
-  AppstoreOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-} from "@ant-design/icons";
+  isNavigationItemActive,
+  navigationItems,
+} from "@/components/layout/navigation-items";
 
-const items = [
-  { href: "/today", label: "Today", Icon: CalendarOutlined },
-  { href: "/history", label: "History", Icon: InboxOutlined },
-  { href: "/topics", label: "Topics", Icon: AppstoreOutlined },
-];
+const STORAGE_KEY = "newsi.sidebar.collapsed";
+
+function readStoredCollapsedState() {
+  if (
+    typeof window === "undefined" ||
+    typeof window.localStorage?.getItem !== "function"
+  ) {
+    return false;
+  }
+
+  return window.localStorage.getItem(STORAGE_KEY) === "true";
+}
+
+function persistCollapsedState(next: boolean) {
+  if (typeof window.localStorage?.setItem !== "function") {
+    return;
+  }
+
+  window.localStorage.setItem(STORAGE_KEY, String(next));
+}
 
 function SparkleIcon({ className }: { className?: string }) {
   return (
@@ -37,11 +50,16 @@ function SparkleIcon({ className }: { className?: string }) {
 
 export function SideNav() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(readStoredCollapsedState);
+
+  function handleCollapsedChange(next: boolean) {
+    setCollapsed(next);
+    persistCollapsedState(next);
+  }
 
   return (
     <aside
-      className={`flex flex-col px-4 py-12 transition-all duration-200 ${
+      className={`flex flex-col bg-nav-rail px-4 py-12 transition-[width,padding] duration-200 motion-reduce:transition-none ${
         collapsed ? "w-[60px] items-center" : "w-[256px] px-8"
       }`}
     >
@@ -53,10 +71,11 @@ export function SideNav() {
       >
         {collapsed ? (
           <button
-            onClick={() => setCollapsed(false)}
-            className="text-text-muted hover:text-foreground"
+            aria-label="Expand sidebar"
+            onClick={() => handleCollapsedChange(false)}
+            className="rounded-md p-1 text-nav-foreground transition-[background-color,color] duration-200 hover:bg-nav-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none"
           >
-            <MenuUnfoldOutlined style={{ fontSize: 15 }} />
+            <MenuUnfoldOutlined aria-hidden style={{ fontSize: 15 }} />
           </button>
         ) : (
           <>
@@ -67,36 +86,59 @@ export function SideNav() {
               </span>
             </Link>
             <button
-              onClick={() => setCollapsed(true)}
-              className="p-1 text-text-muted hover:text-foreground"
+              aria-label="Collapse sidebar"
+              onClick={() => handleCollapsedChange(true)}
+              className="rounded-md p-1 text-nav-foreground transition-[background-color,color] duration-200 hover:bg-nav-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none"
             >
-              <MenuFoldOutlined style={{ fontSize: 15 }} />
+              <MenuFoldOutlined aria-hidden style={{ fontSize: 15 }} />
             </button>
           </>
         )}
       </div>
 
       {/* Nav items */}
-      <nav className={`flex flex-col ${collapsed ? "gap-6 items-center" : "gap-8"}`}>
-        {items.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+      <nav
+        aria-label="Primary"
+        className={`flex flex-col ${collapsed ? "gap-6 items-center" : "gap-8"}`}
+      >
+        {navigationItems.map((item) => {
+          const isActive = isNavigationItemActive(pathname, item.href);
           const color = isActive ? "var(--foreground)" : "var(--text-muted)";
 
           return (
             <Link
+              aria-current={isActive ? "page" : undefined}
+              aria-label={item.label}
               key={item.href}
               href={item.href}
-              className={`flex items-center ${collapsed ? "justify-center" : "gap-4"}`}
-              title={collapsed ? item.label : undefined}
+              className={`flex rounded-[10px] transition-[background-color,color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
+                collapsed
+                  ? "justify-center px-2.5 py-2.5"
+                  : "items-center gap-4 px-3 py-2.5"
+              } ${
+                isActive
+                  ? "bg-nav-active text-nav-active-foreground"
+                  : "text-nav-foreground hover:bg-nav-hover hover:text-foreground"
+              }`}
             >
-              <item.Icon style={{ fontSize: 14, color }} />
-              {!collapsed && (
+              <item.Icon aria-hidden style={{ fontSize: 14, color }} />
+              {collapsed ? (
+                <span
+                  aria-hidden="true"
+                  className={`font-mono text-[11px] uppercase tracking-[2.2px] leading-[16.5px] ${
+                    isActive
+                      ? "font-bold text-nav-active-foreground"
+                      : "font-normal text-nav-foreground"
+                  }`}
+                >
+                  {item.shortLabel}
+                </span>
+              ) : (
                 <span
                   className={`font-mono text-[11px] uppercase tracking-[2.2px] leading-[16.5px] ${
                     isActive
-                      ? "font-bold text-foreground"
-                      : "font-normal text-text-muted"
+                      ? "font-bold text-nav-active-foreground"
+                      : "font-normal text-nav-foreground"
                   }`}
                 >
                   {item.label}

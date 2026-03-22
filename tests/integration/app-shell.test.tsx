@@ -7,25 +7,30 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("AppShell", () => {
-  it("renders the primary navigation items", () => {
+  it("renders the primary navigation and main content regions", () => {
     render(
       <AppShell>
         <div>Body</div>
       </AppShell>,
     );
 
-    expect(screen.getByText("Today")).toBeInTheDocument();
-    expect(screen.getByText("History")).toBeInTheDocument();
-    expect(screen.getByText("Topics")).toBeInTheDocument();
+    const navigation = screen.getByRole("navigation", { name: "Primary" });
+    expect(navigation).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Today" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "History" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Topics" })).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveTextContent("Body");
   });
 
-  it("renders the Newsi brand name", () => {
+  it("renders a mobile navigation toggle", () => {
     render(
       <AppShell>
         <div>Body</div>
       </AppShell>,
     );
 
-    expect(screen.getByText("Newsi")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Open navigation" }),
+    ).toBeInTheDocument();
   });
 });
