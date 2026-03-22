@@ -36,7 +36,6 @@ function KeyPoint({ text }: { text: string }) {
 
 export function DigestView({
   title,
-  intro,
   digestDate,
   sections,
 }: {
