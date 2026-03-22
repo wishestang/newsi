@@ -234,7 +234,7 @@ describe("digestResponseSchema", () => {
 });
 ```
 
-Append to `tests/unit/digest-provider.test.ts`:
+Append the following `it()` block inside the existing `describe("digest provider", ...)` block in `tests/unit/digest-provider.test.ts`, after the last `it()` at line 168 (before the closing `});` of the describe):
 
 ```ts
 it("normalizes nullable whyItMatters while accepting the new upper bounds", async () => {
@@ -344,9 +344,18 @@ git commit -m "feat: relax digest schema limits"
 
 - [ ] **Step 1: Write the failing digest view tests**
 
-Update `tests/integration/digest-view.test.tsx` so `defaultProps` includes Markdown content and add assertions like:
+Replace the contents of `tests/integration/digest-view.test.tsx`. Keep `defaultProps` using plain text (for backward-compat coverage). Remove the existing colon-split tests ("renders key points with bold labels when colon is present" and "renders key points without colon as plain text") since the colon-split behavior is intentionally removed in favor of Markdown rendering. Add new Markdown-specific test cases:
 
 ```ts
+it("renders plain-text digests correctly (backward compat)", () => {
+  render(<DigestView {...defaultProps} />);
+
+  expect(screen.getByText("A first summary paragraph.")).toBeInTheDocument();
+  expect(screen.getByText(/Speed/)).toBeInTheDocument();
+  expect(screen.getByText(/Faster than before/)).toBeInTheDocument();
+  expect(screen.getByText("Point two")).toBeInTheDocument();
+});
+
 it("renders markdown emphasis and links inside digest content", () => {
   render(
     <DigestView
@@ -379,7 +388,7 @@ it("does not render unsafe javascript links", () => {
         {
           title: "AI Agents",
           summary: ["Unsafe [link](javascript:alert(1))"],
-          keyPoints: ["Point two"],
+          keyPoints: ["Point one", "Point two"],
         },
       ]}
     />,
@@ -416,9 +425,11 @@ Expected:
 
 - [ ] **Step 4: Implement a focused Markdown helper and integrate it into the view**
 
-Create `src/components/digest/digest-markdown.tsx`:
+Create `src/components/digest/digest-markdown.tsx`. Since `react-markdown` uses client-side React features, add `"use client"` at the top if `DigestView` is rendered as a server component (check whether `digest-view.tsx` or its parent has `"use client"`):
 
 ```tsx
+"use client";
+
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
