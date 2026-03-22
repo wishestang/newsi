@@ -7,7 +7,7 @@ Newsi is an editorial-style web app for personal knowledge workers. A user write
 - Next.js App Router
 - Auth.js with Google OAuth
 - Prisma + PostgreSQL
-- OpenAI-backed digest generation
+- OpenAI or Gemini-backed digest generation
 - Vitest + React Testing Library
 - Playwright
 
@@ -21,7 +21,9 @@ AUTH_SECRET=""
 AUTH_GOOGLE_ID=""
 AUTH_GOOGLE_SECRET=""
 CRON_SECRET=""
+LLM_PROVIDER="openai"
 LLM_API_KEY=""
+GEMINI_API_KEY=""
 LLM_MODEL="gpt-5.4"
 APP_URL="http://localhost:3000"
 ```
@@ -31,6 +33,9 @@ Notes:
 - `DATABASE_URL` should point to a PostgreSQL database.
 - `AUTH_SECRET` can be generated with `openssl rand -base64 32`.
 - `APP_URL` must match the origin used in your browser and OAuth callback config.
+- `LLM_PROVIDER` selects the digest provider. Set it to `openai` or `gemini`.
+- `LLM_API_KEY` remains the default OpenAI key. For Gemini, `GEMINI_API_KEY` is preferred and `LLM_API_KEY` is used as a fallback if the Gemini key is not set.
+- `LLM_MODEL` is shared by both providers when set. Otherwise OpenAI defaults to `gpt-5.4` and Gemini defaults to `gemini-2.5-flash`.
 - If `DATABASE_URL` or Google OAuth env vars are missing, Newsi falls back to local preview mode for UI work.
 - In preview mode, `/signin` exposes an `Open preview` link so the app can be explored without OAuth.
 
@@ -126,4 +131,4 @@ The route will:
 - `Today` shows the current digest state or the ready digest for the user’s local day.
 - `Archive` keeps historical rows and links to detail pages, including non-ready states.
 - Preview mode now simulates both scheduled and ready digest states so the reading surfaces can be validated without live auth, database, or provider credentials.
-- Digest generation uses OpenAI structured outputs plus web search. Missing `LLM_API_KEY` will cause the cron route to fail generation attempts with a clear configuration error.
+- Digest generation uses OpenAI structured outputs plus web search by default. When `LLM_PROVIDER=gemini`, Newsi uses Gemini through Google's OpenAI compatibility endpoint and structured chat completions. That path does not use web search, so the result may be less grounded in current sources. Missing `LLM_API_KEY` or `GEMINI_API_KEY` will cause the cron route to fail generation attempts with a clear configuration error.
