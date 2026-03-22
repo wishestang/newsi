@@ -116,7 +116,7 @@
 展示逻辑：
 
 - 无 Topics：保留现有 empty state
-- 有 Topics 且 `pending_preview`：展示引导 panel，跳转 `/preview`
+- 有 Topics 且 `pending_preview`：渲染一个引导 panel，不自动重定向，提供明确 CTA：`Continue preview`
 - 已 `active`：走现有正式日报逻辑
 
 ### 4.4 `Archive`
@@ -124,7 +124,8 @@
 未确认前：
 
 - 不显示预览日报
-- 保持空状态
+- 若用户此前从未进入过 `active`，则保持空状态
+- 若用户此前已经产生过正式 `DailyDigest`，则旧的正式 `Archive` 继续保留可见
 
 已确认后：
 
