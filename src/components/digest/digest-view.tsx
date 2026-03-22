@@ -56,11 +56,7 @@ export function DigestView({
               {section.title}
             </h2>
             <div className="flex flex-col gap-[23.4px]">
-              {section.summary.map((paragraph) => (
-                <div key={paragraph}>
-                  <DigestMarkdown content={paragraph} />
-                </div>
-              ))}
+              <DigestMarkdown content={section.summary.join("\n\n")} />
               {section.keyPoints.length > 0 && (
                 <div className="flex flex-col gap-4 border-t border-[var(--border-list)] pt-[17.61px]">
                   {section.keyPoints.map((point) => (
