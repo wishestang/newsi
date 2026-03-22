@@ -15,7 +15,7 @@ import {
   formatScheduledDigestMessage,
   getTodayDigestState,
 } from "@/lib/digest/view-state";
-import { formatDigestDate } from "@/lib/digest/format";
+import { formatDigestDate, formatTodayDate } from "@/lib/digest/format";
 import { isLocalPreviewMode } from "@/lib/env";
 import {
   getLocalTodayState,
@@ -69,6 +69,7 @@ export default async function TodayPage() {
           title={previewState.digest.title}
           intro={previewState.digest.intro}
           sections={previewState.digest.sections}
+          digestDate={formatTodayDate()}
         />
       );
     }
