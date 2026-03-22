@@ -109,7 +109,7 @@ Useful routes:
 - `/signin`
 - `/topics`
 - `/today`
-- `/archive`
+- `/history`
 
 ## Preview Mode
 
@@ -118,9 +118,9 @@ When auth or persistence is not configured, Newsi runs in a local preview mode:
 - `/signin` shows `Open preview`
 - `/topics` saves the standing brief to a cookie and redirects to `/preview`
 - `/preview` shows `Generating`, then a mock digest preview, then requires `Confirm and start daily digests`
-- after confirm, `/today` returns to the formal scheduled state
-- `/archive` stays empty because preview digests never enter the formal archive
-- `Clear interests` removes the preview cookie and resets `Today` and `Archive`
+- after confirm, `/today` immediately shows the promoted formal digest for today
+- `/history` immediately includes that same digest
+- `Clear interests` removes the preview cookie and resets `Today` and `History`
 
 ## Run Tests
 
@@ -154,13 +154,15 @@ The route will:
 
 - skip in preview mode if auth or persistence is not configured
 - scan all interest profiles
-- generate digests only for users whose local time is past the daily 07:00 cutoff
-- retry failed digests up to three times for the same `digestDayKey`
+- generate one formal digest batch after the daily Beijing 07:00 cutoff
+- use the Beijing calendar day for formal `Today` and `History` entries
+- leave failed digests as `failed` until a future batch or manual rerun creates a later day entry
 
 ## Current MVP Notes
 
 - `Topics` stores one standing interest brief per user.
-- `Today` shows the current digest state or the ready digest for the user’s local day.
-- `Archive` keeps historical rows and links to detail pages, including non-ready states.
-- Preview mode mirrors the new confirmation flow: `Topics -> /preview -> confirm -> scheduled`, without leaking preview digests into `Archive`.
+- `Today` shows the current digest state or the ready digest for the current Beijing calendar day.
+- `History` keeps historical rows and links to detail pages, including non-ready states.
+- Preview mode mirrors the new confirmation flow: `Topics -> /preview -> confirm -> today/history`, promoting the confirmed preview into the formal digest.
+- Formal digest generation runs once per day in a single Beijing-time batch at 07:00.
 - Digest generation uses OpenAI structured outputs plus web search by default. When `LLM_PROVIDER=gemini`, Newsi uses Gemini through Google's OpenAI compatibility endpoint and structured chat completions. That path does not use web search, so the result may be less grounded in current sources. Missing `LLM_API_KEY` or `GEMINI_API_KEY` will cause the cron route to fail generation attempts with a clear configuration error.
