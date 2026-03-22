@@ -35,11 +35,11 @@ test.describe("preview flow", () => {
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI agents" })).toBeVisible();
 
-    await page.goto("/archive");
-    const archiveLink = page.getByRole("link", { name: /2026-03-22 Today's Synthesis 5 min/i });
-    await expect(archiveLink).toBeVisible();
-    await archiveLink.click();
-    await expect(page).toHaveURL(/\/archive\/2026-03-22$/);
+    await page.goto("/history");
+    const historyLink = page.getByRole("link", { name: /2026-03-22 Today's Synthesis 5 min/i });
+    await expect(historyLink).toBeVisible();
+    await historyLink.click();
+    await expect(page).toHaveURL(/\/history\/2026-03-22$/);
     await expect(
       page.getByRole("heading", { name: "Today's Synthesis" }),
     ).toBeVisible();
@@ -64,7 +64,7 @@ test.describe("preview flow", () => {
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI policy" })).toBeVisible();
 
-    await page.goto("/archive");
+    await page.goto("/history");
     await expect(
       page.getByRole("link", { name: /2026-03-22 Today's Synthesis 5 min/i }),
     ).toBeVisible();
@@ -76,9 +76,9 @@ test.describe("preview flow", () => {
       page.getByRole("heading", { name: "What are you exploring?" }),
     ).toBeVisible();
 
-    await page.goto("/archive");
+    await page.goto("/history");
     await expect(
-      page.getByRole("heading", { name: "No archived digests yet" }),
+      page.getByRole("heading", { name: "No history yet" }),
     ).toBeVisible();
   });
 });

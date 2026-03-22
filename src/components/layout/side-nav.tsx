@@ -172,10 +172,6 @@ export function SideNav({ user }: { user?: SideNavUser | null }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [accountPopoverOpen]);
 
-  useEffect(() => {
-    setAccountPopoverOpen(false);
-  }, [collapsed]);
-
   return (
     <aside
       className={`flex flex-col py-12 transition-all duration-200 ${
@@ -192,7 +188,10 @@ export function SideNav({ user }: { user?: SideNavUser | null }) {
       >
         {collapsed ? (
           <button
-            onClick={() => setCollapsed(false)}
+            onClick={() => {
+              setAccountPopoverOpen(false);
+              setCollapsed(false);
+            }}
             className="flex w-full justify-center text-text-muted hover:text-foreground"
           >
             <Image
@@ -212,7 +211,10 @@ export function SideNav({ user }: { user?: SideNavUser | null }) {
               </span>
             </Link>
             <button
-              onClick={() => setCollapsed(true)}
+              onClick={() => {
+                setAccountPopoverOpen(false);
+                setCollapsed(true);
+              }}
               className="p-1 text-text-muted hover:text-foreground"
             >
               <Image
