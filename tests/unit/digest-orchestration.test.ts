@@ -24,6 +24,7 @@ describe("runDigestGenerationCycle", () => {
     mockDb.interestProfile.findMany.mockResolvedValue([
       {
         userId: "user-1",
+        status: "active",
         interestText: "AI agents and design tools",
         firstEligibleDigestDayKey: "2026-03-21",
         user: {
@@ -73,6 +74,16 @@ describe("runDigestGenerationCycle", () => {
       failed: 0,
       skipped: 0,
     });
+    expect(mockDb.interestProfile.findMany).toHaveBeenCalledWith({
+      where: { status: "active" },
+      include: {
+        user: {
+          select: {
+            accountTimezone: true,
+          },
+        },
+      },
+    });
     expect(provider.generate).toHaveBeenCalledOnce();
     expect(mockDb.dailyDigest.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -109,6 +120,7 @@ describe("runDigestGenerationCycle", () => {
     mockDb.interestProfile.findMany.mockResolvedValue([
       {
         userId: "user-1",
+        status: "active",
         interestText: "AI agents and design tools",
         firstEligibleDigestDayKey: "2026-03-21",
         user: {
@@ -142,6 +154,7 @@ describe("runDigestGenerationCycle", () => {
     mockDb.interestProfile.findMany.mockResolvedValue([
       {
         userId: "user-1",
+        status: "active",
         interestText: "AI agents and design tools",
         firstEligibleDigestDayKey: "2026-03-21",
         user: {

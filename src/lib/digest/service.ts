@@ -117,6 +117,9 @@ export async function runDigestGenerationCycle({
   }
 
   const profiles = await db.interestProfile.findMany({
+    where: {
+      status: "active",
+    },
     include: {
       user: {
         select: {
