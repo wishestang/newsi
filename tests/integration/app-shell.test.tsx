@@ -28,4 +28,29 @@ describe("AppShell", () => {
 
     expect(screen.getByText("Newsi")).toBeInTheDocument();
   });
+
+  it("renders sidebar icons from public assets", () => {
+    render(
+      <AppShell>
+        <div>Body</div>
+      </AppShell>,
+    );
+
+    expect(screen.getByAltText("Today icon")).toHaveAttribute(
+      "src",
+      expect.stringContaining("/icon-calendar.svg"),
+    );
+    expect(screen.getByAltText("History icon")).toHaveAttribute(
+      "src",
+      expect.stringContaining("/icon-archive.svg"),
+    );
+    expect(screen.getByAltText("Topics icon")).toHaveAttribute(
+      "src",
+      expect.stringContaining("/icon-topics.svg"),
+    );
+    expect(screen.getByAltText("Collapse navigation")).toHaveAttribute(
+      "src",
+      expect.stringContaining("/icon-panel-toggle.svg"),
+    );
+  });
 });

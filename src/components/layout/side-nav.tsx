@@ -1,20 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import {
-  CalendarOutlined,
-  InboxOutlined,
-  AppstoreOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-} from "@ant-design/icons";
 
 const items = [
-  { href: "/today", label: "Today", Icon: CalendarOutlined },
-  { href: "/history", label: "History", Icon: InboxOutlined },
-  { href: "/topics", label: "Topics", Icon: AppstoreOutlined },
+  { href: "/today", label: "Today", iconSrc: "/icon-calendar.svg" },
+  { href: "/history", label: "History", iconSrc: "/icon-archive.svg" },
+  { href: "/topics", label: "Topics", iconSrc: "/icon-topics.svg" },
 ];
 
 function SparkleIcon({ className }: { className?: string }) {
@@ -56,7 +50,13 @@ export function SideNav() {
             onClick={() => setCollapsed(false)}
             className="text-text-muted hover:text-foreground"
           >
-            <MenuUnfoldOutlined style={{ fontSize: 15 }} />
+            <Image
+              src="/icon-panel-toggle.svg"
+              alt="Expand navigation"
+              width={15}
+              height={15}
+              className="rotate-180 opacity-60 transition-transform"
+            />
           </button>
         ) : (
           <>
@@ -70,7 +70,13 @@ export function SideNav() {
               onClick={() => setCollapsed(true)}
               className="p-1 text-text-muted hover:text-foreground"
             >
-              <MenuFoldOutlined style={{ fontSize: 15 }} />
+              <Image
+                src="/icon-panel-toggle.svg"
+                alt="Collapse navigation"
+                width={15}
+                height={15}
+                className="opacity-60 transition-transform"
+              />
             </button>
           </>
         )}
@@ -81,7 +87,6 @@ export function SideNav() {
         {items.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
-          const color = isActive ? "var(--foreground)" : "var(--text-muted)";
 
           return (
             <Link
@@ -90,7 +95,13 @@ export function SideNav() {
               className={`flex items-center ${collapsed ? "justify-center" : "gap-4"}`}
               title={collapsed ? item.label : undefined}
             >
-              <item.Icon style={{ fontSize: 14, color }} />
+              <Image
+                src={item.iconSrc}
+                alt={`${item.label} icon`}
+                width={14}
+                height={14}
+                className={isActive ? "opacity-100" : "opacity-60"}
+              />
               {!collapsed && (
                 <span
                   className={`font-mono text-[11px] uppercase tracking-[2.2px] leading-[16.5px] ${
