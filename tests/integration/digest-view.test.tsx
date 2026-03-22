@@ -30,17 +30,55 @@ describe("DigestView", () => {
     expect(screen.getByText("A first summary paragraph.")).toBeInTheDocument();
   });
 
-  it("renders key points with bold labels when colon is present", () => {
+  it("renders plain-text digests correctly (backward compat)", () => {
     render(<DigestView {...defaultProps} />);
 
-    expect(screen.getByText("Speed:")).toBeInTheDocument();
+    expect(screen.getByText("A first summary paragraph.")).toBeInTheDocument();
+    expect(screen.getByText(/Speed/)).toBeInTheDocument();
     expect(screen.getByText(/Faster than before/)).toBeInTheDocument();
+    expect(screen.getByText("Point two")).toBeInTheDocument();
   });
 
-  it("renders key points without colon as plain text", () => {
-    render(<DigestView {...defaultProps} />);
+  it("renders markdown emphasis and links inside digest content", () => {
+    render(
+      <DigestView
+        {...defaultProps}
+        sections={[
+          {
+            title: "AI Agents",
+            summary: ["A **bold** move with [source](https://example.com)."],
+            keyPoints: ["First point", "Second point"],
+            whyItMatters: "See **why** this matters.",
+          },
+        ]}
+      />,
+    );
 
-    expect(screen.getByText("Point two")).toBeInTheDocument();
+    expect(screen.getByText("bold")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "source" })).toHaveAttribute(
+      "href",
+      "https://example.com",
+    );
+    expect(screen.getByText("First point")).toBeInTheDocument();
+    expect(screen.getByText("why")).toBeInTheDocument();
+  });
+
+  it("does not render unsafe javascript links", () => {
+    render(
+      <DigestView
+        {...defaultProps}
+        sections={[
+          {
+            title: "AI Agents",
+            summary: ["Unsafe [link](javascript:alert(1))"],
+            keyPoints: ["Point one", "Point two"],
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByRole("link", { name: "link" })).not.toBeInTheDocument();
+    expect(screen.getByText("link")).toBeInTheDocument();
   });
 
   it("renders the end-of-digest footer", () => {

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { DigestMarkdown } from "@/components/digest/digest-markdown";
 
 type DigestSection = {
   title: string;
@@ -8,28 +9,12 @@ type DigestSection = {
 };
 
 function KeyPoint({ text }: { text: string }) {
-  const colonIndex = text.indexOf(":");
-  if (colonIndex === -1) {
-    return (
-      <div className="relative pl-[42px]">
-        <div className="absolute left-[24px] top-[8px] size-[6px] bg-accent" />
-        <p className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)]">
-          {text}
-        </p>
-      </div>
-    );
-  }
-
-  const label = text.slice(0, colonIndex + 1);
-  const rest = text.slice(colonIndex + 1);
-
   return (
     <div className="relative pl-[42px]">
       <div className="absolute left-[24px] top-[8px] size-[6px] bg-accent" />
-      <p className="font-sans text-[17px] leading-[28.9px]">
-        <span className="font-semibold text-foreground">{label}</span>
-        <span className="text-[var(--text-body)]">{rest}</span>
-      </p>
+      <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
+        <DigestMarkdown content={text} />
+      </div>
     </div>
   );
 }
@@ -72,12 +57,9 @@ export function DigestView({
             </h2>
             <div className="flex flex-col gap-[23.4px]">
               {section.summary.map((paragraph) => (
-                <p
-                  key={paragraph}
-                  className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)]"
-                >
-                  {paragraph}
-                </p>
+                <div key={paragraph}>
+                  <DigestMarkdown content={paragraph} />
+                </div>
               ))}
               {section.keyPoints.length > 0 && (
                 <div className="flex flex-col gap-4 border-t border-[var(--border-list)] pt-[17.61px]">
@@ -88,9 +70,9 @@ export function DigestView({
               )}
             </div>
             {section.whyItMatters ? (
-              <p className="text-sm italic text-text-muted">
-                {section.whyItMatters}
-              </p>
+              <div className="text-sm italic text-text-muted">
+                <DigestMarkdown content={section.whyItMatters} />
+              </div>
             ) : null}
           </section>
         ))}
