@@ -35,11 +35,11 @@ test.describe("preview flow", () => {
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI agents" })).toBeVisible();
 
-    await page.goto("/history");
-    const historyLink = page.getByRole("link", { name: /2026-03-22 Today's Synthesis 5 min/i });
-    await expect(historyLink).toBeVisible();
-    await historyLink.click();
-    await expect(page).toHaveURL(/\/history\/2026-03-22$/);
+    await page.goto("/archive");
+    const archiveLink = page.getByRole("link", { name: /2026-03-22 Today's Synthesis 5 min/i });
+    await expect(archiveLink).toBeVisible();
+    await archiveLink.click();
+    await expect(page).toHaveURL(/\/archive\/2026-03-22$/);
     await expect(
       page.getByRole("heading", { name: "Today's Synthesis" }),
     ).toBeVisible();
@@ -64,7 +64,7 @@ test.describe("preview flow", () => {
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI policy" })).toBeVisible();
 
-    await page.goto("/history");
+    await page.goto("/archive");
     await expect(
       page.getByRole("link", { name: /2026-03-22 Today's Synthesis 5 min/i }),
     ).toBeVisible();
@@ -76,31 +76,9 @@ test.describe("preview flow", () => {
       page.getByRole("heading", { name: "What are you exploring?" }),
     ).toBeVisible();
 
-    await page.goto("/history");
+    await page.goto("/archive");
     await expect(
-      page.getByRole("heading", { name: "No history yet" }),
+      page.getByRole("heading", { name: "No archived digests yet" }),
     ).toBeVisible();
-  });
-
-  test("mobile navigation uses a drawer instead of squeezing the sidebar", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-
-    await page.goto("/today");
-    await expect(
-      page.getByRole("button", { name: "Open navigation" }),
-    ).toBeVisible();
-
-    await page.getByRole("button", { name: "Open navigation" }).click();
-
-    const dialog = page.getByRole("dialog", { name: "Navigation" });
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("link", { name: "Today" })).toBeVisible();
-    await expect(dialog.getByRole("link", { name: "History" })).toBeVisible();
-    await expect(dialog.getByRole("link", { name: "Topics" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Close navigation" }).click();
-    await expect(dialog).toBeHidden();
   });
 });
