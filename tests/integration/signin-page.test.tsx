@@ -17,7 +17,7 @@ describe("SignInPage", () => {
     render(<SignInPage />);
 
     expect(
-      screen.getByRole("link", { name: "Open preview" }),
+      screen.getByRole("link", { name: /explore a preview/ }),
     ).toBeInTheDocument();
   });
 
@@ -32,7 +32,7 @@ describe("SignInPage", () => {
     render(<SignInPage />);
 
     expect(
-      screen.queryByRole("link", { name: "Open preview" }),
+      screen.queryByRole("link", { name: /explore a preview/ }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Continue with Google" }),
@@ -61,7 +61,7 @@ describe("SignInPage", () => {
     render(<SignInPage />);
 
     expect(
-      screen.getByRole("link", { name: "Open preview" }),
+      screen.getByRole("link", { name: /explore a preview/ }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Continue with Google" }),
