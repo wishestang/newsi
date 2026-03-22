@@ -9,15 +9,35 @@ The current digest generation prompt is too generic (5 lines of instruction), pr
 
 ## Solution
 
-Enhance the prompt to guide the LLM toward data-rich, expert-level output with Markdown formatting support. No domain-specific templates — the prompt provides universal quality principles that the LLM applies to any topic.
+Enhance the prompt to guide the LLM toward data-rich, expert-level output with Markdown formatting support. The system stays on a single universal prompt: no topic classifier, no prompt branching, and no domain-specific templates. Instead, the prompt provides universal quality principles plus a few domain examples that help the model reason about depth expectations.
 
 ## Approach
 
-**Method:** Pure prompt enhancement + Markdown rendering (Schema structure unchanged)
+**Method:** Pure prompt enhancement + Markdown rendering (schema structure unchanged)
+
+### Chosen Direction
+
+Three approaches were considered:
+
+1. Single universal prompt with quality principles and a few domain examples
+2. Single universal prompt plus a formal self-check checklist inside the prompt
+3. Lightweight topic-aware prompt branches for domains like finance or technology
+
+Approach 1 is selected. It keeps one stable prompt entrypoint in `buildDigestPrompt()`, avoids topic classification and template drift, and still gives the model enough guidance to produce richer output. Approach 2 adds prompt length and repetition without enough extra value. Approach 3 would likely improve some high-structure topics, but it introduces classification logic and long-term maintenance costs that are out of scope for this enhancement.
 
 ### 1. Prompt Rewrite (`src/lib/digest/prompt.ts`)
 
-Replace the current minimal prompt with a detailed research analyst brief:
+Replace the current minimal prompt with a detailed research analyst brief. The function signature stays unchanged: `buildDigestPrompt()` still accepts only `dateLabel` and `interestText`. The prompt body is reorganized into five explicit sections:
+
+- task definition
+- content quality requirements
+- depth guidance
+- language rules
+- output rules
+
+The prompt remains universal. Domain mentions such as markets or technology are examples of how to apply the quality bar, not routing logic.
+
+Illustrative target shape:
 
 ```typescript
 export function buildDigestPrompt({
@@ -63,8 +83,9 @@ Return structured JSON only. Use Markdown syntax within string fields (summary, 
 - Explicit data quality requirements (numbers, percentages, names)
 - Analytical depth guidance (causation, implications, not just facts)
 - Markdown formatting instruction for tables and rich text
-- Domain-specific depth hints (financial, tech, etc.)
+- Domain-specific depth hints as examples only (financial, tech, etc.)
 - Language matching rule
+- Single universal prompt preserved; no topic-aware branches and no separate self-check stage
 
 ### 2. Schema Relaxation (`src/lib/digest/schema.ts`)
 
@@ -80,6 +101,8 @@ Structure stays the same. Constraints relaxed to accommodate richer content:
 The same constraint changes apply to the duplicated `openAIDigestResponseSchema` in `provider.ts`.
 
 **Note on schema divergence:** `provider.ts` uses `.nullable()` for `whyItMatters` while `schema.ts` uses `.optional()`. This is intentional — the `normalizeDigestSections()` function in `provider.ts` bridges the gap by stripping null values. This divergence must be preserved; only the array/number constraints should be synced.
+
+**Boundary:** This enhancement widens validation ranges only. It does not add new schema fields for tables, citations, or structured data blocks.
 
 **Backward compatibility:** All changes are constraint relaxations (wider ranges). Existing stored digests remain valid.
 
@@ -99,7 +122,29 @@ The same constraint changes apply to the duplicated `openAIDigestResponseSchema`
 
 **No structural layout changes** — the section/title/footer layout stays identical.
 
+**Rendering boundary:** The view layer renders Markdown inside existing text fields only. It does not interpret business semantics, repair malformed content, or introduce custom content block types.
+
 **Note:** The "End of Digest" footer and other static UI text remain in English. Language matching applies only to LLM-generated content. UI i18n is out of scope.
+
+## Data Flow
+
+The request lifecycle remains the same:
+
+1. `buildDigestPrompt()` creates a single prompt from `dateLabel` and `interestText`
+2. the selected provider requests structured output from the model
+3. provider-level schema validation parses the raw response
+4. `normalizeDigestSections()` removes nullable `whyItMatters` values before app-level parsing
+5. `DigestView` renders the validated strings, with Markdown support in content fields
+
+This enhancement changes prompt quality and text rendering only. It does not introduce new persistence rules, generation phases, or post-processing transforms.
+
+## Failure Handling
+
+The failure semantics stay conservative:
+
+- If the model returns richer content that still fits within the relaxed limits, the digest succeeds normally.
+- If the model exceeds the new schema limits, generation fails at validation time. The app should not silently truncate content because truncation can damage structure and hide prompt-quality regressions.
+- If the model returns imperfect Markdown, the frontend performs best-effort rendering through the Markdown renderer. The app does not attempt to rewrite or sanitize content beyond the existing Markdown safety constraints.
 
 ## Files Changed
 
@@ -114,18 +159,26 @@ The same constraint changes apply to the duplicated `openAIDigestResponseSchema`
 ## Out of Scope
 
 - Domain-specific prompt templates (e.g., a "finance template" vs "tech template")
+- Topic classification or topic-aware prompt branching
 - Two-stage LLM calls (plan then execute)
+- Formal prompt self-check or critique stages
 - Schema structural changes (new fields like `tables`, `dataHighlights`)
 - Changes to the cron schedule, retry logic, or generation service
 - Changes to the topics input form or interest profile storage
 
 ## Testing
 
-- Unit tests for `buildDigestPrompt` — verify language instruction is present, verify Markdown instruction is present
-- Update existing tests:
-  - `tests/unit/digest-schema.test.ts` — update assertions for new constraint ranges (max 8 sections, max 6 summary items, etc.)
-  - `tests/integration/digest-view.test.tsx` — rewrite `KeyPoint` colon-split test to match new ReactMarkdown rendering behavior
-  - `tests/unit/digest-provider.test.ts` — add test fixtures at new upper bounds (8 sections, 8 keyPoints) to verify schema sync
-- Manual test: set interestText to "美股" and verify LLM returns Chinese Markdown content with tables
-- Visual check: verify Markdown tables render correctly in DigestView
-- Backward compat: verify existing stored digests (plain text) still render correctly in the new DigestView
+### Automated
+
+- Unit tests for `buildDigestPrompt` to verify the universal-prompt structure, language rule, Markdown allowance, and depth guidance examples
+- `tests/unit/digest-schema.test.ts` updated for the relaxed upper bounds
+- `tests/unit/digest-provider.test.ts` updated with fixtures at the new limits and a check that `whyItMatters: null` still normalizes correctly
+- `tests/integration/digest-view.test.tsx` updated to verify Markdown rendering for `summary`, `keyPoints`, and `whyItMatters`
+- Digest view safety tests for link handling so `http:` and `https:` render as links while unsafe protocols are rejected
+- Backward-compatibility tests verifying plain-text stored digests still render correctly under the Markdown renderer
+
+### Manual
+
+- Set `interestText` to `美股` and verify the generated digest is fully in Chinese
+- Verify the output includes concrete figures, named entities, and causal analysis instead of generic summaries
+- Verify Markdown tables and emphasis render correctly in `DigestView`
