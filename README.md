@@ -16,7 +16,7 @@ Newsi is an editorial-style web app for personal knowledge workers. A user write
 Copy `.env.example` to `.env.local` and fill in:
 
 ```bash
-DATABASE_URL=""
+DATABASE_URL="postgresql://newsi:newsi-local@localhost:5432/newsi?schema=public"
 AUTH_SECRET=""
 AUTH_GOOGLE_ID=""
 AUTH_GOOGLE_SECRET=""
@@ -40,6 +40,20 @@ Notes:
 - In preview mode, `/signin` exposes an `Open preview` link so the app can be explored without OAuth.
 
 ## Local Database Setup
+
+Start the local PostgreSQL container:
+
+```bash
+docker compose up -d postgres
+```
+
+If that command fails because Docker Desktop or the Docker daemon is not running, start it first and rerun the command.
+
+Then copy `.env.example` to `.env.local` if needed and keep `DATABASE_URL` set to:
+
+```bash
+postgresql://newsi:newsi-local@localhost:5432/newsi?schema=public
+```
 
 Apply the checked-in migration:
 
