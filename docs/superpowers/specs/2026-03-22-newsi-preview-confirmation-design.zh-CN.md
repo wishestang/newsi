@@ -1,7 +1,7 @@
 # Newsi 预览确认流设计
 
 - 日期：2026-03-22
-- 状态：Draft
+- 状态：Ready for Planning
 - 关联项目：Newsi MVP
 - 背景：现有 MVP 在用户于 `Topics` 页面保存兴趣描述后，会直接进入站内待生成/定时生成逻辑。新的需求要求用户先看到一篇基于当前 Topics 生成的真实日报预览，并在确认效果满意后，才开启后续每日 Cron 自动生成。
 
@@ -174,6 +174,7 @@
 
 - `id`
 - `userId`
+- `generationToken`
 - `interestTextSnapshot`
 - `status`
   - `generating`
@@ -195,6 +196,7 @@
 - 预览日报是“待确认资产”，不是正式归档内容
 - 用户重新改 Topics 时，旧预览可被覆盖
 - 确认完成后，当前 `PreviewDigest` 直接删除，不保留在前台系统中
+- `generationToken` 用于防止旧的 provider 结果回写覆盖当前最新预览
 
 ## 6. 生成链路设计
 
@@ -205,7 +207,7 @@
 1. 校验输入
 2. 更新 `InterestProfile.interestText`
 3. 将 `InterestProfile.status` 设为 `pending_preview`
-4. 创建或覆盖该用户的 `PreviewDigest(status=generating)`
+4. 创建或覆盖该用户的 `PreviewDigest(status=generating)`，并刷新新的 `generationToken`
 5. 跳转 `/preview`
 
 这里不直接同步调用 LLM provider。
@@ -245,6 +247,13 @@
 - 真正的 provider 调用由 `/preview` 对应的独立生成入口触发
 - 该生成入口必须保证同一条 `PreviewDigest` 只会被启动一次，避免重复 provider 调用
 - `failed` 状态下的重试复用同一条 `PreviewDigest` 记录，而不是创建新记录
+
+陈旧结果失效规则：
+
+- provider 调用启动时，必须读取并携带当前 `generationToken`
+- provider 返回写回时，必须再次校验 token 仍然匹配当前 `PreviewDigest`
+- 若用户在生成过程中再次修改 `Topics` 或点击 `Clear interests`，则旧 token 立即失效
+- 失效 token 对应的旧结果必须被直接丢弃，不允许覆盖当前最新状态
 
 原因：
 
