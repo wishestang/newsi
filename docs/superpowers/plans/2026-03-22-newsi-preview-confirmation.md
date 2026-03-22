@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a real digest preview confirmation flow so users must save Topics, review one real preview digest, and explicitly confirm before they become eligible for daily cron-generated digests.
+**Goal:** Add a real digest preview confirmation flow so users must save Topics, review one real preview digest, confirm it into today's formal digest, and only then begin future daily cron-generated digests.
 
-**Architecture:** Extend `InterestProfile` with an activation state and introduce a separate `PreviewDigest` persistence model guarded by a generation token. `Topics` will create pending preview state, `/preview` will own preview generation and confirmation, and formal `Today`/`Archive`/cron paths will operate only on `active` profiles. Existing preview-mode cookie logic will be updated to mirror the new state machine without needing live auth or provider calls.
+**Architecture:** Extend `InterestProfile` with an activation state and introduce a separate `PreviewDigest` persistence model guarded by a generation token. `Topics` will create pending preview state, `/preview` will own preview generation, and confirmation will promote the ready preview into a formal `DailyDigest` for the user's local day before future cron runs take over. Existing preview-mode cookie logic will be updated to mirror the same promotion behavior without needing live auth or provider calls.
 
 **Tech Stack:** Next.js App Router, Auth.js, Prisma/PostgreSQL, OpenAI/Gemini digest providers, Vitest, React Testing Library, Playwright
 
@@ -100,6 +100,8 @@ Cover:
 - retry refreshes `generationToken`
 - confirmation requires `PreviewDigest.status = ready`
 - confirmation rejects stale snapshot mismatches
+- confirmation writes or overwrites today's formal `DailyDigest(status = ready)` from the preview content
+- confirmation moves `firstEligibleDigestDayKey` to the next local day so cron skips today's already-confirmed digest
 - cron skips `pending_preview` profiles and only processes `active`
 
 - [ ] **Step 2: Run the preview-domain tests to verify they fail**
@@ -124,6 +126,7 @@ Service rules:
 - writeback must compare the stored `generationToken`
 - stale writes must no-op
 - confirmation must compare `interestTextSnapshot` to the current `InterestProfile.interestText`
+- confirmation must promote the ready preview into today's `DailyDigest` in the same transaction that activates the profile
 
 - [ ] **Step 4: Refactor shared digest generation helpers only where necessary**
 
@@ -211,7 +214,7 @@ Ensure `/preview` does not just render a loading state. It must:
 
 Expose server actions from the page so:
 - retry refreshes the token and returns to `generating`
-- confirm activates the profile, recalculates `firstEligibleDigestDayKey`, deletes the preview row, and redirects to `/today`
+- confirm promotes the preview into today's `DailyDigest`, activates the profile, recalculates `firstEligibleDigestDayKey` for tomorrow, deletes the preview row, and redirects to `/today`
 
 - [ ] **Step 7: Keep the component boundary focused**
 
@@ -250,6 +253,8 @@ Cover:
 - `Today` shows a pending-preview panel with a `Continue preview` CTA instead of auto-redirecting
 - first-time unconfirmed users see an empty `Archive`
 - previously active users who are back in `pending_preview` still see old formal archive rows
+- after confirm, `Today` immediately shows the promoted digest content for the current local day
+- after confirm, `Archive` immediately includes the same promoted formal digest
 - cron route still authenticates but formal generation only touches `active`
 
 - [ ] **Step 2: Run the targeted tests to verify they fail**
@@ -264,7 +269,7 @@ Expected: FAIL because the new pending-preview branch is not implemented yet.
 Implement route behavior so:
 - `Today` distinguishes unconfigured, pending-preview, and active users
 - `Archive` suppresses preview rows entirely
-- `Archive` continues to show only formal `DailyDigest` rows
+- `Archive` continues to show only formal `DailyDigest` rows, including the just-confirmed digest
 - `Archive` detail never attempts to render preview content
 
 - [ ] **Step 4: Keep the formal system isolated**
@@ -303,7 +308,7 @@ git commit -m "feat: separate pending preview from formal digest views"
 Cover:
 - preview-mode `Topics` save leads to `/preview`
 - local preview mode has `pending_preview` vs `active` semantics
-- confirm in local preview mode unlocks `Today`/`Archive`
+- confirm in local preview mode promotes the mock preview into today's formal content for both `Today` and `Archive`
 - clear resets to the empty state
 
 - [ ] **Step 2: Run the preview-mode tests to verify they fail**
@@ -322,7 +327,7 @@ Update `src/lib/preview-state.ts` so the cookie stores enough state to mimic:
 - `ready`
 - `active`
 
-Keep it intentionally mock-only, but make the control flow match the real product.
+Keep it intentionally mock-only, but make the control flow match the real product, including preview promotion into the confirmed formal digest.
 
 - [ ] **Step 4: Add a local `/preview` experience**
 
@@ -335,7 +340,8 @@ Adjust the e2e flow to:
 - land on `/preview`
 - confirm
 - reach `Today`
-- keep `Archive` behavior aligned with the new rules
+- verify `Today` immediately shows the promoted digest
+- verify `Archive` immediately shows the same digest
 - include the regression path where an already `active` user edits Topics, falls back to `pending_preview`, cron pauses, and confirmation restores formal eligibility
 
 - [ ] **Step 6: Re-run local preview tests**
@@ -362,9 +368,9 @@ git commit -m "feat: align local preview mode with confirmation flow"
 - [ ] **Step 1: Update docs for the new flow**
 
 Document:
-- `Topics -> /preview -> confirm -> daily cron`
+- `Topics -> /preview -> confirm -> Today/Archive now, cron tomorrow`
 - `pending_preview` vs `active`
-- the fact that preview digests are not archived
+- the fact that unconfirmed preview digests are not archived, but confirmed previews are promoted into formal `DailyDigest`
 - the local preview-mode approximation
 
 - [ ] **Step 2: Run the full verification suite**
@@ -383,7 +389,8 @@ Expected: PASS
 Check at minimum:
 - `/topics` save redirects to `/preview`
 - `/preview` generates or shows a preview
-- confirm enables formal flow
+- confirm promotes the preview into today's formal digest
+- `/archive` immediately shows the promoted digest
 - previously active archive remains visible when re-entering `pending_preview`
 
 - [ ] **Step 4: Commit**
