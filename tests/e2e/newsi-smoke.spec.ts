@@ -36,7 +36,7 @@ test.describe("preview flow", () => {
     await expect(page.getByRole("heading", { name: "AI agents" })).toBeVisible();
 
     await page.goto("/history");
-    const historyLink = page.getByRole("link", { name: /2026-03-22 Today's Synthesis 5 min/i });
+    const historyLink = page.getByRole("link", { name: /Mar 22 Today's Synthesis 5 min/i });
     await expect(historyLink).toBeVisible();
     await historyLink.click();
     await expect(page).toHaveURL(/\/history\/2026-03-22$/);
@@ -66,7 +66,7 @@ test.describe("preview flow", () => {
 
     await page.goto("/history");
     await expect(
-      page.getByRole("link", { name: /2026-03-22 Today's Synthesis 5 min/i }),
+      page.getByRole("link", { name: /Mar 22 Today's Synthesis 5 min/i }),
     ).toBeVisible();
 
     await page.goto("/topics");

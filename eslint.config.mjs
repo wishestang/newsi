@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "test-results/**",
     "next-env.d.ts",
+    ".claude/**",
+    ".superpowers/**",
+    ".worktrees/**",
+    ".pnpm-store/**",
   ]),
 ]);
 
