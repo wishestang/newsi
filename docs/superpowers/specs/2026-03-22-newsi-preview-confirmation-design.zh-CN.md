@@ -64,6 +64,12 @@
 
 这条规则保证“用户看到并确认过的效果”与“后续自动生成依据的配置”一致。
 
+补充规则：
+
+- 已有的正式 `Archive` 继续保留可见
+- 仅暂停新的正式日报生成
+- `Today` 在这段时间切换为“请先完成预览确认”的引导状态
+
 ## 4. 页面与路由设计
 
 ### 4.1 `Topics`
@@ -98,6 +104,10 @@
   - 操作按钮：
     - `Try again`
     - `Back to Topics`
+
+无效访问处理：
+
+- 若用户没有 `pending_preview` 配置，也没有当前 `PreviewDigest`，则访问 `/preview` 时直接跳回 `Topics`
 
 ### 4.3 `Today`
 
@@ -135,6 +145,11 @@
 - `pending_preview`：当前 Topics 还没有被用户用真实日报效果确认
 - `active`：当前 Topics 已被用户确认，可以进入后续每日 Cron
 
+补充说明：
+
+- `none` 不是持久化状态，不写入数据库
+- `none` 仅表示该用户当前没有 `InterestProfile` 记录，是页面层的展示态
+
 `firstEligibleDigestDayKey` 的含义调整为：
 
 - 仅在 `active` 后用于正式 `DailyDigest`
@@ -168,6 +183,7 @@
 - 每个用户同一时刻只保留一份当前预览日报
 - 预览日报是“待确认资产”，不是正式归档内容
 - 用户重新改 Topics 时，旧预览可被覆盖
+- 确认完成后，当前 `PreviewDigest` 直接删除，不保留在前台系统中
 
 ## 6. 生成链路设计
 
@@ -180,6 +196,8 @@
 3. 将 `InterestProfile.status` 设为 `pending_preview`
 4. 创建或覆盖该用户的 `PreviewDigest(status=generating)`
 5. 跳转 `/preview`
+
+这里不直接同步调用 LLM provider。
 
 ### 6.2 生成预览日报
 
@@ -207,8 +225,15 @@
 - 跳转 `/preview`
 - `/preview` 在加载时：
   - 若 `ready`，直接展示
-  - 若 `generating`，显示等待态并触发/轮询生成结果
+  - 若 `generating`，显示等待态并通过明确的 server action 或 route handler 启动生成
   - 若 `failed`，允许重试
+
+生成所有权约束：
+
+- `Topics` 保存只负责创建/覆盖 `PreviewDigest(generating)` 记录
+- 真正的 provider 调用由 `/preview` 对应的独立生成入口触发
+- 该生成入口必须保证同一条 `PreviewDigest` 只会被启动一次，避免重复 provider 调用
+- `failed` 状态下的重试复用同一条 `PreviewDigest` 记录，而不是创建新记录
 
 原因：
 
@@ -221,10 +246,12 @@
 当用户点击 `Confirm and start daily digests` 时：
 
 1. 校验当前 `PreviewDigest.status = ready`
-2. 将 `InterestProfile.status` 更新为 `active`
-3. 根据用户时区重新计算 `firstEligibleDigestDayKey`
-4. 删除当前 `PreviewDigest`，或至少使其不再参与展示
-5. 重新验证 `/today` 与 `/archive` 的正式状态
+2. 校验 `PreviewDigest.interestTextSnapshot` 仍然等于当前 `InterestProfile.interestText`
+3. 若快照不一致，则拒绝确认，并要求用户基于最新 Topics 重新生成预览
+4. 将 `InterestProfile.status` 更新为 `active`
+5. 根据用户时区重新计算 `firstEligibleDigestDayKey`
+6. 删除当前 `PreviewDigest`
+7. 重新验证 `/today` 与 `/archive` 的正式状态
 
 确认后不要求立即生成一条正式 `DailyDigest`。正式日报仍由后续每日 Cron 按规则执行。
 
@@ -346,6 +373,7 @@
 
 - 每次 Topics 变更只保留当前最新预览
 - 不保留多版本
+- 确认动作必须校验 `interestTextSnapshot` 与当前 profile 一致，拒绝旧预览被误确认
 
 ### 13.3 风险：正式日报与预览日报在时效上存在差异
 
