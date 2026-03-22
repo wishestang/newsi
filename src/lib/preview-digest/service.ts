@@ -5,9 +5,8 @@ import { generateDigest, parseStoredDigestContent } from "@/lib/digest/service";
 import type { DigestProvider } from "@/lib/digest/provider";
 import type { DigestResponse } from "@/lib/digest/schema";
 import {
-  getDigestDayKey,
-  getNextDigestDayKey,
-  normalizeTimezone,
+  getBeijingDigestDayKey,
+  getNextBeijingDigestDayKey,
 } from "@/lib/timezone";
 
 export interface StoredPreviewDigest {
@@ -164,12 +163,11 @@ export async function confirmPreviewDigest(userId: string, now = new Date()) {
     throw new Error("Preview digest is stale. Regenerate it from the latest Topics.");
   }
 
-  const user = await db.user.findUniqueOrThrow({
+  await db.user.findUniqueOrThrow({
     where: { id: userId },
   });
-  const timezone = normalizeTimezone(user.accountTimezone);
-  const digestDayKey = getDigestDayKey(timezone, now);
-  const firstEligibleDigestDayKey = getNextDigestDayKey(timezone, now);
+  const digestDayKey = getBeijingDigestDayKey(now);
+  const firstEligibleDigestDayKey = getNextBeijingDigestDayKey(now);
   const contentJson = previewDigest.contentJson ?? Prisma.JsonNull;
 
   await db.$transaction(async (tx) => {

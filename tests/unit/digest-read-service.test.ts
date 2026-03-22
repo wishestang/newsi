@@ -83,4 +83,21 @@ describe("digest read helpers", () => {
       },
     });
   });
+
+  it("loads today's digest using the Beijing digest day key", async () => {
+    mockDb.dailyDigest.findUnique.mockResolvedValue(null);
+
+    const { getTodayDigest } = await import("@/lib/digest/service");
+
+    await getTodayDigest("user-1", new Date("2026-03-21T23:30:00Z"));
+
+    expect(mockDb.dailyDigest.findUnique).toHaveBeenCalledWith({
+      where: {
+        userId_digestDayKey: {
+          userId: "user-1",
+          digestDayKey: "2026-03-22",
+        },
+      },
+    });
+  });
 });

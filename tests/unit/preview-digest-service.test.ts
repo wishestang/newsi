@@ -205,12 +205,12 @@ describe("preview digest service", () => {
     });
     mockDb.user.findUniqueOrThrow.mockResolvedValue({
       id: "user-1",
-      accountTimezone: "Asia/Shanghai",
+      accountTimezone: "America/New_York",
     });
 
     const { confirmPreviewDigest } = await import("@/lib/preview-digest/service");
 
-    await confirmPreviewDigest("user-1", new Date("2026-03-22T09:00:00+08:00"));
+    await confirmPreviewDigest("user-1", new Date("2026-03-22T00:30:00Z"));
 
     expect(mockDb.dailyDigest.upsert).toHaveBeenCalledWith({
       where: {

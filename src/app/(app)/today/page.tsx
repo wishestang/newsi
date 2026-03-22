@@ -119,7 +119,7 @@ export default async function TodayPage() {
     redirect("/signin");
   }
 
-  const storedDigest = await getTodayDigest(user.id, user.accountTimezone ?? "UTC");
+  const storedDigest = await getTodayDigest(user.id);
   const digest = storedDigest?.digest ?? null;
 
   const state = getTodayDigestState({
