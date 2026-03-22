@@ -12,7 +12,7 @@ export function PreviewActions({
   canRetry?: boolean;
 }) {
   return (
-    <div className="mx-auto flex max-w-3xl gap-4 px-10 pb-20">
+    <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-4 px-10 pb-20">
       {canConfirm && onConfirmAction ? (
         <form action={onConfirmAction}>
           <button className="bg-stone-950 px-4 py-2 text-sm text-white">

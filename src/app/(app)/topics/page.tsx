@@ -96,7 +96,7 @@ export default async function TopicsPage() {
     await clearInterestProfile(currentUser.id);
     revalidatePath("/topics");
     revalidatePath("/today");
-    revalidatePath("/archive");
+    revalidatePath("/history");
     redirect("/today");
   }
 

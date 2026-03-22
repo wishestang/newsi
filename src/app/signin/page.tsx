@@ -4,15 +4,7 @@ import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { isAuthConfigured, isLocalPreviewMode } from "@/lib/env";
 
 function DigestPreviewCard() {
-  const now = new Date();
-  const dateStr = now
-    .toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
-    .toUpperCase();
+  const dateStr = "SAT, MAR 22, 2026";
 
   return (
     <div className="hidden md:block flex-shrink-0 w-[340px]">
@@ -113,8 +105,8 @@ export default function SignInPage() {
 
           {/* Headline */}
           <h1 className="mb-4 font-heading text-[32px] font-bold leading-[1.08] tracking-[-1.2px] text-foreground md:text-[38px]">
-            Your daily
-            <br className="hidden md:inline" /> knowledge synthesis
+            Reclaim your
+            <br className="hidden md:inline" /> Attention
           </h1>
 
           {/* Subline */}

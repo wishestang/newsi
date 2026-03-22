@@ -51,9 +51,11 @@ function getUserLabels(user: SideNavUser) {
 function UserIdentity({
   user,
   showText,
+  showSecondaryLabel = true,
 }: {
   user: SideNavUser;
   showText: boolean;
+  showSecondaryLabel?: boolean;
 }) {
   const { initials, primaryLabel, secondaryLabel } = getUserLabels(user);
 
@@ -73,11 +75,11 @@ function UserIdentity({
       )}
       {showText ? (
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">
+          <span className="block truncate text-sm font-medium text-foreground">
             {primaryLabel}
-          </p>
-          {secondaryLabel ? (
-            <p className="truncate text-xs text-text-muted">{secondaryLabel}</p>
+          </span>
+          {showSecondaryLabel && secondaryLabel ? (
+            <span className="block truncate text-xs text-text-muted">{secondaryLabel}</span>
           ) : null}
         </div>
       ) : null}
@@ -111,11 +113,15 @@ function UserSummaryBar({
       title={collapsed ? primaryLabel : undefined}
       className={
         collapsed
-          ? "flex w-full justify-center"
-          : "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-[rgba(0,0,0,0.03)]"
+          ? "flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(23,23,23,0.06)] bg-[rgba(255,255,255,0.78)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-[rgba(255,255,255,0.92)]"
+          : "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-[rgba(0,0,0,0.03)]"
       }
     >
-      <UserIdentity user={user} showText={!collapsed} />
+      <UserIdentity
+        user={user}
+        showText={!collapsed}
+        showSecondaryLabel={collapsed}
+      />
     </button>
   );
 }
@@ -132,17 +138,19 @@ function UserAccountPopover({
       role="dialog"
       aria-label="Account panel"
       className={`absolute bottom-full mb-3 ${
-        collapsed ? "left-1/2 -translate-x-1/2" : "left-0"
-      } z-50 w-56 rounded-xl border border-border-solid bg-white p-3 shadow-[0_2px_12px_rgba(0,0,0,0.08)]`}
+        collapsed ? "left-full ml-3 translate-x-0" : "left-0"
+      } z-50 w-56 overflow-hidden rounded-[18px] border border-[rgba(23,23,23,0.08)] bg-[rgba(255,255,255,0.96)] shadow-[0_18px_38px_rgba(15,23,42,0.08)] backdrop-blur-[10px]`}
     >
-      <div className="flex items-center gap-3">
-        <UserIdentity user={user} showText />
+      <div className="border-b border-[rgba(23,23,23,0.08)] px-4 py-4">
+        <div className="flex items-center gap-3">
+          <UserIdentity user={user} showText />
+        </div>
       </div>
-      <div className="mt-3 border-t border-border-solid pt-3">
+      <div className="p-2">
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/signin" })}
-          className="w-full rounded-md px-1 py-1.5 text-left font-mono text-[11px] uppercase tracking-[2.2px] text-text-muted hover:text-foreground"
+          className="w-full rounded-xl px-3 py-2.5 text-left font-mono text-[11px] uppercase tracking-[2.2px] text-[rgba(125,45,45,0.86)] transition-colors hover:bg-[rgba(125,45,45,0.06)] hover:text-[rgba(98,35,35,0.92)]"
         >
           Sign Out
         </button>
@@ -174,7 +182,7 @@ export function SideNav({ user }: { user?: SideNavUser | null }) {
 
   return (
     <aside
-      className={`flex flex-col py-12 transition-all duration-200 ${
+      className={`flex h-full flex-col py-12 transition-all duration-200 ${
         collapsed
           ? "w-[60px] min-w-[60px] max-w-[60px] px-0"
           : "w-[256px] min-w-[256px] max-w-[256px] px-8"
@@ -271,7 +279,7 @@ export function SideNav({ user }: { user?: SideNavUser | null }) {
         className={collapsed ? "mt-auto flex w-full justify-center" : "mt-auto"}
       >
         {user ? (
-          <div className="relative w-full">
+          <div className={collapsed ? "relative flex justify-center" : "relative w-full"}>
             <UserSummaryBar
               user={user}
               collapsed={collapsed}

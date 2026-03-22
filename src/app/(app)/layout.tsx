@@ -19,5 +19,15 @@ export default async function AppLayout({
     redirect("/signin");
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell
+      user={{
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image,
+      }}
+    >
+      {children}
+    </AppShell>
+  );
 }

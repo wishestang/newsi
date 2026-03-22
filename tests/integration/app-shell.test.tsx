@@ -111,18 +111,62 @@ describe("AppShell", () => {
     expect(container.querySelector("aside > .mt-auto")).not.toBeNull();
   });
 
-  it("shows a bottom account summary with name and email when expanded", () => {
+  it("stretches the sidebar column so the footer can anchor to the bottom", () => {
     render(
       <AppShell user={demoUser}>
         <div>Body</div>
       </AppShell>,
     );
 
-    expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
-    expect(screen.getByText("ada@example.com")).toBeInTheDocument();
+    const sideNav = screen.getByRole("complementary");
+    expect(sideNav).toHaveClass("h-full");
+    expect(sideNav.parentElement).toHaveClass("flex");
+  });
+
+  it("matches the viewport height without pinning the rail during page scroll", () => {
+    render(
+      <AppShell user={demoUser}>
+        <div className="h-[2000px]">Tall body</div>
+      </AppShell>,
+    );
+
+    expect(screen.getByRole("complementary").parentElement).toHaveClass(
+      "self-start",
+      "h-screen",
+    );
+    expect(screen.getByRole("complementary").parentElement).not.toHaveClass(
+      "sticky",
+      "top-0",
+    );
+  });
+
+  it("locks the shell to the viewport and makes only the main content area scroll", () => {
+    const { container } = render(
+      <AppShell user={demoUser}>
+        <div className="h-[2000px]">Tall body</div>
+      </AppShell>,
+    );
+
+    expect(container.firstElementChild).toHaveClass("h-screen", "overflow-hidden");
+    expect(screen.getByRole("main")).toHaveClass("overflow-y-auto");
+  });
+
+  it("shows a bottom account summary without email in the expanded trigger", () => {
+    render(
+      <AppShell user={demoUser}>
+        <div>Body</div>
+      </AppShell>,
+    );
 
     const accountTrigger = screen.getByRole("button", { name: /ada lovelace/i });
+    expect(within(accountTrigger).getByText("Ada Lovelace")).toBeInTheDocument();
+    expect(within(accountTrigger).queryByText("ada@example.com")).toBeNull();
     expect(accountTrigger).toHaveAttribute("aria-haspopup", "dialog");
+    expect(accountTrigger).toHaveClass("rounded-2xl", "px-3", "py-2.5");
+    expect(accountTrigger).not.toHaveClass(
+      "border",
+      "bg-[rgba(255,255,255,0.72)]",
+    );
   });
 
   it("opens an upward account panel with profile info and sign out", () => {
@@ -135,6 +179,11 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByRole("button", { name: /ada lovelace/i }));
 
     const panel = screen.getByRole("dialog");
+    expect(panel).toHaveClass(
+      "rounded-[18px]",
+      "bg-[rgba(255,255,255,0.96)]",
+      "shadow-[0_18px_38px_rgba(15,23,42,0.08)]",
+    );
     expect(within(panel).getByText("Ada Lovelace")).toBeInTheDocument();
     expect(within(panel).getByText("ada@example.com")).toBeInTheDocument();
     expect(
@@ -159,9 +208,12 @@ describe("AppShell", () => {
     );
 
     expect(accountTrigger).toBeDefined();
+    expect(accountTrigger).toHaveClass("h-8", "w-8");
+    expect(accountTrigger?.parentElement).toHaveClass("flex", "justify-center");
     fireEvent.click(accountTrigger!);
 
     const panel = screen.getByRole("dialog");
+    expect(panel).toHaveClass("left-full", "ml-3", "translate-x-0");
     expect(within(panel).getByText("Ada Lovelace")).toBeInTheDocument();
     expect(within(panel).getByText("ada@example.com")).toBeInTheDocument();
   });
