@@ -17,7 +17,7 @@ import {
 } from "@/lib/digest/view-state";
 import { isLocalPreviewMode } from "@/lib/env";
 import {
-  getPreviewDigestState,
+  getLocalTodayState,
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
@@ -38,24 +38,45 @@ export default async function TodayPage() {
       );
     }
 
-    const previewState = getPreviewDigestState(previewProfile);
+    const previewState = getLocalTodayState(previewProfile);
+
+    if (previewState.status === "pending_preview") {
+      return (
+        <section className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center px-10 py-20">
+          <p className="text-xs uppercase tracking-[0.32em] text-stone-400">
+            Preview required
+          </p>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-stone-600">
+            You have a preview digest waiting for confirmation. Continue preview to
+            start daily digests for your current Topics.
+          </p>
+          <div className="mt-10">
+            <Link
+              href="/preview"
+              className="inline-flex bg-stone-950 px-4 py-2 text-sm text-white"
+            >
+              Continue preview
+            </Link>
+          </div>
+        </section>
+      );
+    }
 
     if (previewState.status === "scheduled") {
       return (
         <StatusPanel
           label="Scheduled"
           body={formatScheduledDigestMessage({
-            firstEligibleDigestDayKey: previewProfile.firstEligibleDigestDayKey,
+            firstEligibleDigestDayKey: previewState.firstEligibleDigestDayKey,
           })}
         />
       );
     }
 
     return (
-      <DigestView
-        title={previewState.digest.title}
-        intro={previewState.digest.intro}
-        sections={previewState.digest.sections}
+      <EmptyState
+        title="What are you exploring?"
+        body="Add your interests in Topics and Newsi will prepare a daily synthesis around them."
       />
     );
   }

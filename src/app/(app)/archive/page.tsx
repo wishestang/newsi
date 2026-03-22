@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { listArchivedDigests } from "@/lib/digest/service";
 import { isLocalPreviewMode } from "@/lib/env";
 import {
-  getPreviewDigestState,
+  getLocalArchiveItems,
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
@@ -29,11 +29,20 @@ export default async function ArchivePage() {
       );
     }
 
-    const previewState = getPreviewDigestState(previewProfile);
+    const items = getLocalArchiveItems(previewProfile);
+
+    if (items.length === 0) {
+      return (
+        <EmptyState
+          title="No archived digests yet"
+          body="Your daily syntheses will appear here once generation is enabled."
+        />
+      );
+    }
 
     return (
       <ArchiveList
-        items={[previewState.archiveItem]}
+        items={items}
       />
     );
   }

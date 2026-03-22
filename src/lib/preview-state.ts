@@ -1,6 +1,6 @@
-import { format, parseISO } from "date-fns";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import type { DigestResponse } from "@/lib/digest/schema";
+import { digestResponseSchema, type DigestResponse } from "@/lib/digest/schema";
 import {
   getDigestDayKey,
   getNextDigestDayKey,
@@ -10,33 +10,34 @@ import {
 
 export const PREVIEW_INTEREST_COOKIE = "newsi-preview-interest-profile";
 
+const previewDigestSchema = z.object({
+  status: z.enum(["generating", "failed", "ready"]),
+  generationToken: z.string().min(1),
+  digest: digestResponseSchema.optional(),
+  failureReason: z.string().optional(),
+});
+
+const activePreviewDigestSchema = z.object({
+  digestDayKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  digest: digestResponseSchema,
+});
+
 const previewInterestProfileSchema = z.object({
   interestText: z.string().min(1),
   timezone: z.string().min(1),
   firstEligibleDigestDayKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  status: z.enum(["pending_preview", "active"]),
+  preview: previewDigestSchema,
+  activeDigest: activePreviewDigestSchema.optional(),
 });
 
 export type PreviewInterestProfile = z.infer<typeof previewInterestProfileSchema>;
-
-export interface PreviewArchiveDigest {
+export type LocalArchiveItem = {
   digestDayKey: string;
   title: string;
-  status: "scheduled" | "ready";
-  readingTime?: number;
-  detailBody: string;
-}
-
-type PreviewDigestState =
-  | {
-      status: "scheduled";
-      archiveItem: PreviewArchiveDigest;
-    }
-  | {
-      status: "ready";
-      digestDayKey: string;
-      archiveItem: PreviewArchiveDigest;
-      digest: DigestResponse;
-    };
+  status?: "scheduled" | "generating" | "failed" | "ready";
+  readingTime?: number | null;
+};
 
 export function buildPreviewInterestProfile({
   interestText,
@@ -56,6 +57,11 @@ export function buildPreviewInterestProfile({
     interestText: interestText.trim(),
     timezone,
     firstEligibleDigestDayKey,
+    status: "pending_preview",
+    preview: {
+      status: "generating",
+      generationToken: randomUUID(),
+    },
   };
 }
 
@@ -71,48 +77,108 @@ export function parsePreviewInterestProfile(value: string | null | undefined) {
   }
 }
 
-export function buildPreviewArchiveDigest(
+export function completePreviewGeneration(
   profile: PreviewInterestProfile,
-): PreviewArchiveDigest {
-  return {
-    digestDayKey: profile.firstEligibleDigestDayKey,
-    title: "Digest scheduled",
-    status: "scheduled",
-    detailBody: `Newsi saved this brief and scheduled the first digest for ${format(parseISO(profile.firstEligibleDigestDayKey), "MMMM d, yyyy")} after the local 07:00 run. Standing brief: ${profile.interestText}`,
-  };
-}
-
-export function getPreviewDigestState(
-  profile: PreviewInterestProfile,
-  now = new Date(),
-): PreviewDigestState {
-  const todayDigestDayKey = getDigestDayKey(profile.timezone, now);
-
-  if (todayDigestDayKey < profile.firstEligibleDigestDayKey) {
-    return {
-      status: "scheduled",
-      archiveItem: buildPreviewArchiveDigest(profile),
-    };
+  generationToken: string,
+) {
+  if (
+    profile.status !== "pending_preview" ||
+    profile.preview.status !== "generating" ||
+    profile.preview.generationToken !== generationToken
+  ) {
+    return profile;
   }
 
-  const digest = buildPreviewDigest(profile);
+  return {
+    ...profile,
+    preview: {
+      status: "ready",
+      generationToken,
+      digest: buildPreviewDigest(profile.interestText),
+    },
+  } satisfies PreviewInterestProfile;
+}
+
+export function failPreviewGeneration(
+  profile: PreviewInterestProfile,
+  generationToken: string,
+  failureReason: string,
+) {
+  if (
+    profile.status !== "pending_preview" ||
+    profile.preview.generationToken !== generationToken
+  ) {
+    return profile;
+  }
 
   return {
-    status: "ready",
-    digestDayKey: todayDigestDayKey,
-    archiveItem: {
-      digestDayKey: todayDigestDayKey,
-      title: digest.title,
-      status: "ready",
-      readingTime: digest.readingTime,
-      detailBody: digest.intro,
+    ...profile,
+    preview: {
+      status: "failed",
+      generationToken,
+      failureReason,
     },
-    digest,
+  } satisfies PreviewInterestProfile;
+}
+
+export function retryPreviewGeneration(profile: PreviewInterestProfile) {
+  return {
+    ...profile,
+    preview: {
+      status: "generating",
+      generationToken: randomUUID(),
+    },
+  } satisfies PreviewInterestProfile;
+}
+
+export function confirmPreviewInterestProfile(
+  profile: PreviewInterestProfile,
+  now = new Date(),
+) {
+  if (profile.preview.status !== "ready" || !profile.preview.digest) {
+    throw new Error("Preview digest is not ready yet.");
+  }
+
+  return {
+    ...profile,
+    firstEligibleDigestDayKey: hasDailyRunPassed(profile.timezone, now)
+      ? getNextDigestDayKey(profile.timezone, now)
+      : getDigestDayKey(profile.timezone, now),
+    status: "active",
+  } satisfies PreviewInterestProfile;
+}
+
+export type LocalTodayState =
+  | { status: "unconfigured" }
+  | { status: "pending_preview" }
+  | { status: "scheduled"; firstEligibleDigestDayKey: string };
+
+export function getLocalTodayState(
+  profile: PreviewInterestProfile | null,
+): LocalTodayState {
+  if (!profile) {
+    return { status: "unconfigured" };
+  }
+
+  if (profile.status === "pending_preview") {
+    return { status: "pending_preview" };
+  }
+
+  return {
+    status: "scheduled",
+    firstEligibleDigestDayKey: profile.firstEligibleDigestDayKey,
   };
 }
 
-function buildPreviewDigest(profile: PreviewInterestProfile): DigestResponse {
-  const focusAreas = getFocusAreas(profile.interestText);
+export function getLocalArchiveItems(
+  profile: PreviewInterestProfile | null,
+): LocalArchiveItem[] {
+  void profile;
+  return [];
+}
+
+function buildPreviewDigest(interestText: string): DigestResponse {
+  const focusAreas = getFocusAreas(interestText);
 
   return {
     title: "Today's Synthesis",

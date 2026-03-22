@@ -1,3 +1,7 @@
+export function isLocalPreviewForced() {
+  return process.env.FORCE_LOCAL_PREVIEW === "1";
+}
+
 export function isPersistenceConfigured() {
   return Boolean(process.env.DATABASE_URL);
 }
@@ -19,5 +23,8 @@ export function isAuthConfigured() {
 }
 
 export function isLocalPreviewMode() {
-  return process.env.NODE_ENV !== "production" && !isAuthConfigured();
+  return (
+    process.env.NODE_ENV !== "production" &&
+    (isLocalPreviewForced() || !isAuthConfigured())
+  );
 }

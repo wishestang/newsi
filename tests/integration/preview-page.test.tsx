@@ -2,12 +2,16 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const redirectMock = vi.fn();
+const refreshMock = vi.fn();
 const getServerSessionMock = vi.fn();
 const getPreviewDigestMock = vi.fn();
-const startPreviewDigestGenerationMock = vi.fn();
+const fetchMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   redirect: (href: string) => redirectMock(href),
+  useRouter: () => ({
+    refresh: refreshMock,
+  }),
 }));
 
 vi.mock("next-auth", () => ({
@@ -32,8 +36,6 @@ vi.mock("@/lib/env", () => ({
 
 vi.mock("@/lib/preview-digest/service", () => ({
   getPreviewDigest: (...args: unknown[]) => getPreviewDigestMock(...args),
-  startPreviewDigestGeneration: (...args: unknown[]) =>
-    startPreviewDigestGenerationMock(...args),
 }));
 
 describe("PreviewPage", () => {
@@ -51,12 +53,21 @@ describe("PreviewPage", () => {
   beforeEach(() => {
     vi.resetModules();
     redirectMock.mockReset();
+    refreshMock.mockReset();
     getServerSessionMock.mockReset();
     getPreviewDigestMock.mockReset();
-    startPreviewDigestGenerationMock.mockReset();
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -73,8 +84,6 @@ describe("PreviewPage", () => {
       },
       content: null,
     });
-    startPreviewDigestGenerationMock.mockResolvedValue({ started: true });
-
     const { default: PreviewPage } = await import("@/app/(app)/preview/page");
 
     render(await PreviewPage());

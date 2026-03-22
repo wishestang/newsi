@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
-import { isAuthConfigured } from "@/lib/env";
+import { isAuthConfigured, isLocalPreviewMode } from "@/lib/env";
 
 export default function SignInPage() {
-  const authConfigured = isAuthConfigured();
+  const authConfigured = isAuthConfigured() && !isLocalPreviewMode();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-stone-950 text-stone-100">

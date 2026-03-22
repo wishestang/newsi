@@ -37,6 +37,7 @@ Notes:
 - `LLM_API_KEY` remains the default OpenAI key. For Gemini, `GEMINI_API_KEY` is preferred and `LLM_API_KEY` is used as a fallback if the Gemini key is not set.
 - `LLM_MODEL` is shared by both providers when set. Otherwise OpenAI defaults to `gpt-5.4` and Gemini defaults to `gemini-2.5-flash`.
 - If `DATABASE_URL` or Google OAuth env vars are missing, Newsi falls back to local preview mode for UI work.
+- Set `FORCE_LOCAL_PREVIEW=1` to force preview mode even when auth is configured. This is useful for smoke tests and local UI checks.
 - In preview mode, `/signin` exposes an `Open preview` link so the app can be explored without OAuth.
 
 ## Local Database Setup
@@ -115,9 +116,10 @@ Useful routes:
 When auth or persistence is not configured, Newsi runs in a local preview mode:
 
 - `/signin` shows `Open preview`
-- `/topics` saves the standing brief to a cookie
-- `/today` shows either a scheduled state or a mock ready digest, depending on whether the local day has reached `firstEligibleDigestDayKey`
-- `/archive` shows the preview digest row and detail page
+- `/topics` saves the standing brief to a cookie and redirects to `/preview`
+- `/preview` shows `Generating`, then a mock digest preview, then requires `Confirm and start daily digests`
+- after confirm, `/today` returns to the formal scheduled state
+- `/archive` stays empty because preview digests never enter the formal archive
 - `Clear interests` removes the preview cookie and resets `Today` and `Archive`
 
 ## Run Tests
@@ -160,5 +162,5 @@ The route will:
 - `Topics` stores one standing interest brief per user.
 - `Today` shows the current digest state or the ready digest for the user’s local day.
 - `Archive` keeps historical rows and links to detail pages, including non-ready states.
-- Preview mode now simulates both scheduled and ready digest states so the reading surfaces can be validated without live auth, database, or provider credentials.
+- Preview mode mirrors the new confirmation flow: `Topics -> /preview -> confirm -> scheduled`, without leaking preview digests into `Archive`.
 - Digest generation uses OpenAI structured outputs plus web search by default. When `LLM_PROVIDER=gemini`, Newsi uses Gemini through Google's OpenAI compatibility endpoint and structured chat completions. That path does not use web search, so the result may be less grounded in current sources. Missing `LLM_API_KEY` or `GEMINI_API_KEY` will cause the cron route to fail generation attempts with a clear configuration error.

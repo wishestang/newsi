@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-describe("buildPreviewInterestProfile", () => {
-  it("sets the first eligible digest day based on the browser timezone", async () => {
+describe("preview state", () => {
+  it("builds a pending preview profile without leaking confirmed preview content into formal history", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-22T08:00:00+08:00"));
 
@@ -12,10 +12,15 @@ describe("buildPreviewInterestProfile", () => {
         interestText: "AI agents and design tools",
         browserTimezone: "Asia/Shanghai",
       }),
-    ).toEqual({
+    ).toMatchObject({
       interestText: "AI agents and design tools",
       timezone: "Asia/Shanghai",
       firstEligibleDigestDayKey: "2026-03-23",
+      status: "pending_preview",
+      preview: {
+        status: "generating",
+        generationToken: expect.any(String),
+      },
     });
 
     vi.useRealTimers();
@@ -28,63 +33,85 @@ describe("buildPreviewInterestProfile", () => {
     expect(parsePreviewInterestProfile("not-json")).toBeNull();
   });
 
-  it("builds archive preview copy from the saved interest profile", async () => {
-    const { buildPreviewArchiveDigest } = await import("@/lib/preview-state");
+  it("completes preview generation only when the token still matches", async () => {
+    const { completePreviewGeneration } = await import("@/lib/preview-state");
 
-    expect(
-      buildPreviewArchiveDigest({
-        interestText: "AI agents and design tools",
+    const completed = completePreviewGeneration(
+      {
+        interestText: "AI agents, design tools, indie builders",
         timezone: "Asia/Shanghai",
         firstEligibleDigestDayKey: "2026-03-23",
-      }),
-    ).toEqual({
-      digestDayKey: "2026-03-23",
-      title: "Digest scheduled",
-      status: "scheduled",
-      detailBody:
-        "Newsi saved this brief and scheduled the first digest for March 23, 2026 after the local 07:00 run. Standing brief: AI agents and design tools",
-    });
-  });
-
-  it("returns a ready preview digest on or after the first eligible day", async () => {
-    const { getPreviewDigestState } = await import("@/lib/preview-state");
-
-    expect(
-      getPreviewDigestState(
-        {
-          interestText: "AI agents, design tools, indie builders",
-          timezone: "Asia/Shanghai",
-          firstEligibleDigestDayKey: "2026-03-23",
+        status: "pending_preview",
+        preview: {
+          status: "generating",
+          generationToken: "token-1",
         },
-        new Date("2026-03-23T09:00:00+08:00"),
-      ),
-    ).toMatchObject({
-      status: "ready",
-      digestDayKey: "2026-03-23",
-      digest: {
-        title: "Today's Synthesis",
-        readingTime: 5,
+      },
+      "token-1",
+    );
+
+    expect(completed).toMatchObject({
+      status: "pending_preview",
+      preview: {
+        status: "ready",
+        generationToken: "token-1",
+        digest: {
+          title: "Today's Synthesis",
+          readingTime: 5,
+        },
       },
     });
   });
 
-  it("keeps preview digests scheduled before the first eligible day", async () => {
-    const { getPreviewDigestState } = await import("@/lib/preview-state");
+  it("keeps stale local generation attempts from mutating the profile", async () => {
+    const { completePreviewGeneration } = await import("@/lib/preview-state");
 
-    expect(
-      getPreviewDigestState(
-        {
-          interestText: "AI agents, design tools, indie builders",
-          timezone: "Asia/Shanghai",
-          firstEligibleDigestDayKey: "2026-03-23",
-        },
-        new Date("2026-03-22T09:00:00+08:00"),
-      ),
-    ).toMatchObject({
-      status: "scheduled",
-      archiveItem: {
-        digestDayKey: "2026-03-23",
+    const profile = {
+      interestText: "AI agents, design tools, indie builders",
+      timezone: "Asia/Shanghai",
+      firstEligibleDigestDayKey: "2026-03-23",
+      status: "pending_preview" as const,
+      preview: {
+        status: "generating" as const,
+        generationToken: "token-1",
       },
+    };
+
+    expect(completePreviewGeneration(profile, "token-2")).toEqual(profile);
+  });
+
+  it("confirms a ready preview into an active scheduled profile without creating archive content", async () => {
+    const { confirmPreviewInterestProfile, getLocalTodayState, getLocalArchiveItems } =
+      await import("@/lib/preview-state");
+
+    const confirmed = confirmPreviewInterestProfile(
+      {
+        interestText: "AI agents, design tools, indie builders",
+        timezone: "Asia/Shanghai",
+        firstEligibleDigestDayKey: "2026-03-23",
+        status: "pending_preview",
+        preview: {
+          status: "ready",
+          generationToken: "token-1",
+          digest: {
+            title: "Today's Synthesis",
+            intro: "Preview intro",
+            readingTime: 5,
+            sections: [
+              { title: "A", summary: ["a", "b"], keyPoints: ["c", "d"] },
+              { title: "B", summary: ["a", "b"], keyPoints: ["c", "d"] },
+              { title: "C", summary: ["a", "b"], keyPoints: ["c", "d"] },
+            ],
+          },
+        },
+      },
+      new Date("2026-03-22T09:00:00+08:00"),
+    );
+
+    expect(getLocalTodayState(confirmed)).toMatchObject({
+      status: "scheduled",
+      firstEligibleDigestDayKey: "2026-03-23",
     });
+    expect(getLocalArchiveItems(confirmed)).toEqual([]);
   });
 });

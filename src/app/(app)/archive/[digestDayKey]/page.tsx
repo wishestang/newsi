@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { getDigestByDayKey } from "@/lib/digest/service";
 import { isLocalPreviewMode } from "@/lib/env";
 import {
-  getPreviewDigestState,
+  getLocalArchiveItems,
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
@@ -30,32 +30,12 @@ export default async function ArchiveDetailPage({
       notFound();
     }
 
-    const previewState = getPreviewDigestState(previewProfile);
+    const items = getLocalArchiveItems(previewProfile);
+    const archiveItem = items.find((item) => item.digestDayKey === digestDayKey);
 
-    if (
-      (previewState.status === "scheduled" &&
-        previewState.archiveItem.digestDayKey !== digestDayKey) ||
-      (previewState.status === "ready" && previewState.digestDayKey !== digestDayKey)
-    ) {
+    if (!archiveItem) {
       notFound();
     }
-
-    if (previewState.status === "ready") {
-      return (
-        <DigestView
-          title={previewState.digest.title}
-          intro={previewState.digest.intro}
-          sections={previewState.digest.sections}
-        />
-      );
-    }
-
-    return (
-      <StatusPanel
-        label={digestDayKey}
-        body={previewState.archiveItem.detailBody}
-      />
-    );
   }
 
   if (!db) {
