@@ -27,9 +27,6 @@ describe("runDigestGenerationCycle", () => {
         status: "active",
         interestText: "AI agents and design tools",
         firstEligibleDigestDayKey: "2026-03-21",
-        user: {
-          accountTimezone: "UTC",
-        },
       },
     ]);
     mockDb.dailyDigest.findUnique.mockResolvedValue(null);
@@ -76,13 +73,6 @@ describe("runDigestGenerationCycle", () => {
     });
     expect(mockDb.interestProfile.findMany).toHaveBeenCalledWith({
       where: { status: "active" },
-      include: {
-        user: {
-          select: {
-            accountTimezone: true,
-          },
-        },
-      },
     });
     expect(provider.generate).toHaveBeenCalledOnce();
     expect(mockDb.dailyDigest.upsert).toHaveBeenCalledWith(
@@ -123,9 +113,6 @@ describe("runDigestGenerationCycle", () => {
         status: "active",
         interestText: "AI agents and design tools",
         firstEligibleDigestDayKey: "2026-03-21",
-        user: {
-          accountTimezone: "America/Los_Angeles",
-        },
       },
     ]);
 
@@ -136,7 +123,7 @@ describe("runDigestGenerationCycle", () => {
     const { runDigestGenerationCycle } = await import("@/lib/digest/service");
 
     const result = await runDigestGenerationCycle({
-      now: new Date("2026-03-21T12:30:00Z"),
+      now: new Date("2026-03-22T06:30:00+08:00"),
       provider,
     });
 
@@ -150,6 +137,81 @@ describe("runDigestGenerationCycle", () => {
     expect(mockDb.dailyDigest.upsert).not.toHaveBeenCalled();
   });
 
+  it("uses one shared Beijing digestDayKey for all active users after 07:00", async () => {
+    mockDb.interestProfile.findMany.mockResolvedValue([
+      {
+        userId: "user-1",
+        status: "active",
+        interestText: "AI agents and design tools",
+        firstEligibleDigestDayKey: "2026-03-21",
+      },
+      {
+        userId: "user-2",
+        status: "active",
+        interestText: "Semiconductors and robotics",
+        firstEligibleDigestDayKey: "2026-03-21",
+      },
+    ]);
+    mockDb.dailyDigest.findUnique.mockResolvedValue(null);
+    mockDb.dailyDigest.upsert.mockResolvedValue(undefined);
+    mockDb.dailyDigest.update.mockResolvedValue(undefined);
+
+    const provider = {
+      generate: vi.fn().mockResolvedValue({
+        title: "Today's Synthesis",
+        intro: "Two product signals stood out today.",
+        readingTime: 6,
+        sections: [
+          {
+            title: "AI Agents",
+            summary: ["a", "b"],
+            keyPoints: ["c", "d"],
+          },
+          {
+            title: "Design Tools",
+            summary: ["a", "b"],
+            keyPoints: ["c", "d"],
+          },
+          {
+            title: "Indie Builders",
+            summary: ["a", "b"],
+            keyPoints: ["c", "d"],
+          },
+        ],
+      }),
+    };
+
+    const { runDigestGenerationCycle } = await import("@/lib/digest/service");
+
+    await runDigestGenerationCycle({
+      now: new Date("2026-03-22T08:15:00+08:00"),
+      provider,
+    });
+
+    expect(mockDb.dailyDigest.upsert).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        where: {
+          userId_digestDayKey: {
+            userId: "user-1",
+            digestDayKey: "2026-03-22",
+          },
+        },
+      }),
+    );
+    expect(mockDb.dailyDigest.upsert).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: {
+          userId_digestDayKey: {
+            userId: "user-2",
+            digestDayKey: "2026-03-22",
+          },
+        },
+      }),
+    );
+  });
+
   it("marks the digest as failed and increments retry count when generation errors", async () => {
     mockDb.interestProfile.findMany.mockResolvedValue([
       {
@@ -157,9 +219,6 @@ describe("runDigestGenerationCycle", () => {
         status: "active",
         interestText: "AI agents and design tools",
         firstEligibleDigestDayKey: "2026-03-21",
-        user: {
-          accountTimezone: "UTC",
-        },
       },
     ]);
     mockDb.dailyDigest.findUnique.mockResolvedValue({

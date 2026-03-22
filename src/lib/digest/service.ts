@@ -7,7 +7,11 @@ import {
   type DigestProvider,
   parseDigestResult,
 } from "@/lib/digest/provider";
-import { getDigestDayKey, hasDailyRunPassed, normalizeTimezone } from "@/lib/timezone";
+import {
+  DIGEST_TIMEZONE,
+  getBeijingDigestDayKey,
+  hasBeijingDailyRunPassed,
+} from "@/lib/timezone";
 
 export const MAX_DIGEST_RETRIES = 3;
 
@@ -99,10 +103,9 @@ export async function getDigestByDayKey(
 
 export async function getTodayDigest(
   userId: string,
-  timezone: string,
   now = new Date(),
 ) {
-  return getDigestByDayKey(userId, getDigestDayKey(timezone, now));
+  return getDigestByDayKey(userId, getBeijingDigestDayKey(now));
 }
 
 export async function runDigestGenerationCycle({
@@ -120,13 +123,6 @@ export async function runDigestGenerationCycle({
     where: {
       status: "active",
     },
-    include: {
-      user: {
-        select: {
-          accountTimezone: true,
-        },
-      },
-    },
   });
 
   const result: DigestCycleResult = {
@@ -136,16 +132,14 @@ export async function runDigestGenerationCycle({
     skipped: 0,
   };
 
+  if (!hasBeijingDailyRunPassed(now)) {
+    result.skipped = profiles.length;
+    return result;
+  }
+
+  const digestDayKey = getBeijingDigestDayKey(now);
+
   for (const profile of profiles) {
-    const timezone = normalizeTimezone(profile.user.accountTimezone);
-
-    if (!hasDailyRunPassed(timezone, now)) {
-      result.skipped += 1;
-      continue;
-    }
-
-    const digestDayKey = getDigestDayKey(timezone, now);
-
     if (profile.firstEligibleDigestDayKey > digestDayKey) {
       result.skipped += 1;
       continue;
@@ -193,7 +187,7 @@ export async function runDigestGenerationCycle({
     try {
       const digest = await generateDigest({
         provider,
-        dateLabel: formatInTimeZone(now, timezone, "MMMM d, yyyy"),
+        dateLabel: formatInTimeZone(now, DIGEST_TIMEZONE, "MMMM d, yyyy"),
         interestText: profile.interestText,
       });
 
