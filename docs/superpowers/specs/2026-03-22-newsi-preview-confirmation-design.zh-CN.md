@@ -19,6 +19,7 @@
 
 - 用户在 `Topics` 保存后，立即进入一个真实预览日报生成流
 - 预览日报必须使用真实 LLM provider 生成，不使用 mock digest
+- 用户确认预览满意后，这篇预览稿立即成为当天正式日报
 - 用户确认预览满意后，才开启后续每日 Cron
 - 未确认前，不进入 `Archive`，也不参与 Cron
 
@@ -28,7 +29,6 @@
 
 - 多次预览版本对比
 - 用户对预览结果打分
-- 预览内容进入 `Archive`
 - 预览确认后的邮件或站外通知
 - 单独的“以后再开启自动生成”设置项
 
@@ -44,8 +44,10 @@
 6. 系统调用真实 provider 生成一篇日报预览
 7. 生成完成后，`/preview` 展示完整预览日报
 8. 用户点击 `Confirm and start daily digests`
-9. 系统将当前 Topics 配置标记为正式激活
-10. 后续每日 Cron 才开始为该用户生成正式日报
+9. 系统将这篇预览稿晋升为“今天的正式日报”
+10. 系统将当前 Topics 配置标记为正式激活
+11. `Today` 立即展示这篇正式日报，`Archive` 立即出现今天这一条
+12. 后续每日 Cron 从明天开始继续生成正式日报
 
 ### 3.2 未确认时的行为
 
@@ -125,7 +127,8 @@
 
 - 无 Topics：保留现有 empty state
 - 有 Topics 且 `pending_preview`：渲染一个引导 panel，不自动重定向，提供明确 CTA：`Continue preview`
-- 已 `active`：走现有正式日报逻辑
+- 已 `active` 且今天已有正式 `DailyDigest`：立即展示这篇日报
+- 已 `active` 且今天还没有正式 `DailyDigest`：走现有正式日报逻辑
 
 ### 4.4 `Archive`
 
@@ -138,6 +141,7 @@
 已确认后：
 
 - 仍只展示正式 `DailyDigest`
+- 刚确认的当天预览稿会以正式 `DailyDigest` 进入 `Archive`
 
 ## 5. 数据模型设计
 
@@ -163,7 +167,7 @@
 
 `firstEligibleDigestDayKey` 的含义调整为：
 
-- 仅在 `active` 后用于正式 `DailyDigest`
+- 仅在 `active` 后用于“下一次需要由 Cron 生成的正式 `DailyDigest`”
 - 不再用于控制预览生成
 
 ### 5.2 `PreviewDigest`
@@ -195,7 +199,7 @@
 - 每个用户同一时刻只保留一份当前预览日报
 - 预览日报是“待确认资产”，不是正式归档内容
 - 用户重新改 Topics 时，旧预览可被覆盖
-- 确认完成后，当前 `PreviewDigest` 直接删除，不保留在前台系统中
+- 确认完成后，当前 `PreviewDigest` 在晋升为正式 `DailyDigest` 后删除
 - `generationToken` 用于防止旧的 provider 结果回写覆盖当前最新预览
 
 ## 6. 生成链路设计
@@ -272,12 +276,14 @@
 1. 校验当前 `PreviewDigest.status = ready`
 2. 校验 `PreviewDigest.interestTextSnapshot` 仍然等于当前 `InterestProfile.interestText`
 3. 若快照不一致，则拒绝确认，并要求用户基于最新 Topics 重新生成预览
-4. 将 `InterestProfile.status` 更新为 `active`
-5. 根据用户时区重新计算 `firstEligibleDigestDayKey`
-6. 删除当前 `PreviewDigest`
-7. 重新验证 `/today` 与 `/archive` 的正式状态
+4. 以“用户确认当日的本地 `digestDayKey`”创建或覆盖一条 `DailyDigest(status=ready)`
+5. 将 `PreviewDigest` 的标题、intro、content、readingTime、provider metadata 复制到该 `DailyDigest`
+6. 将 `InterestProfile.status` 更新为 `active`
+7. 将 `firstEligibleDigestDayKey` 推进到“明天”，确保 Cron 不会重复生成今天这一条
+8. 删除当前 `PreviewDigest`
+9. 重新验证 `/today` 与 `/archive` 的正式状态
 
-确认后不要求立即生成一条正式 `DailyDigest`。正式日报仍由后续每日 Cron 按规则执行。
+确认动作本身就是“接受这篇预览稿作为今天的正式日报”，不是只开启后续自动化。
 
 ## 8. Cron 改造
 
@@ -293,6 +299,7 @@
 
 - 用户未确认前不会进入正式日报系统
 - `Archive` 中不会混入未确认配置生成的内容
+- 用户确认后，Cron 会从明天开始继续生成，不重复覆盖今天已确认的日报
 
 ## 9. Preview Mode 改造
 
@@ -302,7 +309,8 @@
 
 - 保存 `Topics` 后进入 `/preview`
 - `/preview` 的本地模式继续允许 mock digest，但页面结构要与正式模式一致
-- 在本地 preview mode 下，也必须保留“确认后才进入正式自动生成”的状态机
+- 在本地 preview mode 下，确认动作同样要把当前预览稿提升为当天正式内容
+- 本地 preview mode 的 `Today` 与 `Archive` 也要表现为“确认后立刻可读”
 
 目的不是让本地 preview mode 变成真实联网，而是让交互流一致。
 
@@ -331,7 +339,7 @@
 ### 11.1 单元测试
 
 - `InterestProfile.status` 状态切换
-- `confirmPreviewDigest()` 会正确激活 profile 并计算 `firstEligibleDigestDayKey`
+- `confirmPreviewDigest()` 会正确激活 profile、写入当天 `DailyDigest`，并计算下一次 Cron 的 `firstEligibleDigestDayKey`
 - Cron 只处理 `active` 用户
 - 重新编辑 Topics 会将 `active` 退回 `pending_preview`
 
@@ -339,7 +347,8 @@
 
 - `Topics` 保存后跳转 `/preview`
 - `/preview` 在 `generating / ready / failed` 三种状态下的渲染
-- 用户确认后，`Today` 从“先去预览”状态切换到正式逻辑
+- 用户确认后，`Today` 立即展示刚确认的正式日报
+- 用户确认后，`Archive` 立即出现同一条正式日报
 - 首次配置且未确认前，`Archive` 为空
 - 若用户此前已有正式 `DailyDigest`，再次进入 `pending_preview` 时旧 `Archive` 继续可见
 
@@ -354,6 +363,11 @@
 5. confirm
 6. `/today`
 7. `/archive`
+
+关键断言：
+
+- `/today` 中的内容就是刚确认的那篇预览稿
+- `/archive` 中立即出现同一 `digestDayKey` 的正式日报
 
 补充路径：
 
@@ -376,9 +390,10 @@
    - `Topics` 保存跳转
    - 新增 `/preview`
    - `Today` 分流
-4. Cron 过滤 `active`
-5. Preview mode 同步调整
-6. 测试补齐
+4. 确认时的 preview -> daily promotion
+5. Cron 过滤 `active`
+6. Preview mode 同步调整
+7. 测试补齐
 
 ## 13. 风险与约束
 
@@ -400,14 +415,15 @@
 - 不保留多版本
 - 确认动作必须校验 `interestTextSnapshot` 与当前 profile 一致，拒绝旧预览被误确认
 
-### 13.3 风险：正式日报与预览日报在时效上存在差异
+### 13.3 风险：确认覆盖今天正式日报
 
-预览生成发生在用户操作时，正式日报生成发生在 Cron 时点，结果不可能完全一致。
+若用户在同一天内多次修改 Topics 并重新确认，系统会产生“今天这条正式日报应以哪次确认为准”的问题。
 
-这不是缺陷，但产品文案应明确：
+MVP 规则建议明确为：
 
-- 预览用于验证日报风格与相关性
-- 正式日报将按每日运行时的实时信息生成
+- 以最后一次成功确认为准
+- 确认动作允许覆盖当天已有的正式 `DailyDigest`
+- Cron 不再回头重跑当天
 
 ## 14. 验收标准
 
@@ -417,5 +433,7 @@
 - 用户确认前不进入 `Archive`
 - 用户确认前 Cron 不处理该用户
 - 用户确认后，profile 进入 `active`
-- 后续 Cron 才开始生成正式 `DailyDigest`
+- 用户确认后，当前预览稿立即成为当天正式 `DailyDigest`
+- 用户确认后，`Today` 立即可读，`Archive` 立即出现当天这一条
+- 后续 Cron 从明天开始生成正式 `DailyDigest`
 - 用户再次修改 `Topics` 后，必须重新走预览确认流
