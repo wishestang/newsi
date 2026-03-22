@@ -12,6 +12,7 @@ import {
   parseStoredDigestContent,
 } from "@/lib/digest/service";
 import {
+  formatFailedDigestMessage,
   formatScheduledDigestMessage,
   getTodayDigestState,
 } from "@/lib/digest/view-state";
@@ -183,8 +184,8 @@ export default async function TodayPage() {
   if (state === "failed") {
     return (
       <StatusPanel
-        label="Retrying"
-        body="Today's digest failed on the last attempt. Newsi will retry automatically."
+        label="Failed"
+        body={formatFailedDigestMessage()}
       />
     );
   }

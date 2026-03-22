@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatFailedDigestMessage,
   formatScheduledDigestMessage,
   getTodayDigestState,
 } from "@/lib/digest/view-state";
@@ -41,17 +42,23 @@ describe("getTodayDigestState", () => {
     ).toBe("failed");
   });
 
-  it("formats the scheduled state with an explicit first digest date", () => {
+  it("falls back to the generic scheduled message when no date is known", () => {
+    expect(formatScheduledDigestMessage({ firstEligibleDigestDayKey: null })).toBe(
+      "Your next digest will appear after the Beijing 07:00 run.",
+    );
+  });
+
+  it("formats the scheduled state with an explicit Beijing digest date", () => {
     expect(
       formatScheduledDigestMessage({
         firstEligibleDigestDayKey: "2026-03-22",
       }),
-    ).toBe("Your first digest is scheduled for March 22, 2026 after the local 07:00 run.");
+    ).toBe("Your first digest is scheduled for March 22, 2026 after the Beijing 07:00 run.");
   });
 
-  it("falls back to the generic scheduled message when no date is known", () => {
-    expect(formatScheduledDigestMessage({ firstEligibleDigestDayKey: null })).toBe(
-      "Your next digest will appear after the local 07:00 run.",
+  it("formats the failed state without promising another same-day retry", () => {
+    expect(formatFailedDigestMessage()).toBe(
+      "Today's digest failed in the Beijing morning batch. The next batch will run tomorrow at 07:00 Beijing time.",
     );
   });
 });

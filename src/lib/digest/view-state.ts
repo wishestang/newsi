@@ -38,8 +38,12 @@ export function formatScheduledDigestMessage({
   firstEligibleDigestDayKey: string | null;
 }) {
   if (!firstEligibleDigestDayKey) {
-    return "Your next digest will appear after the local 07:00 run.";
+    return "Your next digest will appear after the Beijing 07:00 run.";
   }
 
-  return `Your first digest is scheduled for ${format(parseISO(firstEligibleDigestDayKey), "MMMM d, yyyy")} after the local 07:00 run.`;
+  return `Your first digest is scheduled for ${format(parseISO(firstEligibleDigestDayKey), "MMMM d, yyyy")} after the Beijing 07:00 run.`;
+}
+
+export function formatFailedDigestMessage() {
+  return "Today's digest failed in the Beijing morning batch. The next batch will run tomorrow at 07:00 Beijing time.";
 }
