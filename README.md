@@ -79,6 +79,122 @@ http://localhost:3000/api/auth/callback/google
 
 For a deployed environment, add the production callback URL with the same path on your real domain.
 
+## Deploy to Vercel
+
+Newsi is set up for a straightforward Vercel deployment with one daily cron job and a managed PostgreSQL database.
+
+### Recommended production shape
+
+- Hosting: Vercel
+- Database: managed PostgreSQL
+- Auth: Google OAuth
+- Batch generation: Vercel Cron once per day
+
+### Build command
+
+Use this build command in Vercel:
+
+```bash
+pnpm vercel-build
+```
+
+This runs:
+
+```bash
+pnpm db:generate
+pnpm db:migrate:deploy
+next build
+```
+
+### Production environment variables
+
+Set these in Vercel Project Settings:
+
+```bash
+DATABASE_URL
+AUTH_SECRET
+AUTH_GOOGLE_ID
+AUTH_GOOGLE_SECRET
+CRON_SECRET
+LLM_PROVIDER
+LLM_API_KEY
+GEMINI_API_KEY
+LLM_MODEL
+APP_URL
+```
+
+Recommended production values:
+
+- `APP_URL=https://<your-domain>`
+- `LLM_PROVIDER=openai` or `gemini`
+- `LLM_MODEL=gpt-5.4` or your chosen Gemini model
+
+`APP_URL` must match the exact deployed origin used in your OAuth configuration.
+
+### Production Google OAuth callback
+
+Add this callback URL in Google Cloud Console:
+
+```text
+https://<your-domain>/api/auth/callback/google
+```
+
+Keep the local callback too:
+
+```text
+http://localhost:3000/api/auth/callback/google
+```
+
+### Cron behavior on Vercel Hobby
+
+This repo keeps the current daily cron configuration from [vercel.json](/Users/bytedance/Documents/newsi/vercel.json):
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/digests",
+      "schedule": "0 23 * * *"
+    }
+  ]
+}
+```
+
+That schedule is intended to support the product's once-per-day Beijing-time digest batch. On Vercel Hobby, this should be treated as a daily batch trigger, not a precise minute-level scheduler.
+
+### Recommended deployment flow
+
+1. Push the repo to GitHub.
+2. Import the repo into Vercel.
+3. Attach a PostgreSQL database and set `DATABASE_URL`.
+4. Fill all required environment variables.
+5. Set the build command to `pnpm vercel-build`.
+6. Deploy.
+7. Verify the Google OAuth callback on the production domain.
+8. Confirm the cron route appears in Vercel Cron Jobs.
+
+### Post-deploy smoke checklist
+
+After the first production deploy, verify:
+
+- `/signin` loads
+- Google sign-in succeeds
+- a user can save Topics
+- `/preview` generates and confirms correctly
+- `/today` shows the confirmed digest
+- `/history` lists the same digest
+- `/api/cron/digests` runs through Vercel cron or a manual authenticated request
+
+### Security reminder before launch
+
+If any of these secrets were ever exposed in development, logs, screenshots, or chat, rotate them before launch:
+
+- `AUTH_SECRET`
+- `CRON_SECRET`
+- Google OAuth Client Secret
+- OpenAI API key
+- Gemini API key
+
 ## Run the App
 
 ```bash
@@ -103,6 +219,15 @@ nvm use
 ```
 
 If `pnpm exec prisma migrate deploy` fails with an empty `Schema engine error`, check `node -v` first. In this workspace, that failure reproduced on Node `25.2.1`; this is an inference based on Prisma's documented supported versions, not a confirmed Prisma upstream bug report.
+
+The same constraint applies to:
+
+```bash
+pnpm db:migrate:deploy
+pnpm vercel-build
+```
+
+If you see the same empty Prisma schema engine failure locally, switch to a supported Node version before treating it as an application bug.
 
 Useful routes:
 
