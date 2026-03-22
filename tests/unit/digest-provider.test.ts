@@ -166,4 +166,35 @@ describe("digest provider", () => {
       "LLM_API_KEY is not configured.",
     );
   });
+
+  it("normalizes nullable whyItMatters while accepting the new upper bounds", async () => {
+    const sections = Array.from({ length: 8 }, (_, index) => ({
+      title: `Section ${index + 1}`,
+      summary: ["a", "b", "c", "d", "e", "f"],
+      keyPoints: ["1", "2", "3", "4", "5", "6", "7", "8"],
+      whyItMatters: index === 0 ? null : `Reason ${index + 1}`,
+    }));
+
+    const client = {
+      responses: {
+        parse: vi.fn().mockResolvedValue({
+          output_parsed: {
+            title: "Today's Synthesis",
+            intro: "Two signals stood out today.",
+            readingTime: 20,
+            sections,
+          },
+        }),
+      },
+    };
+
+    const { createOpenAIDigestProvider } = await import("@/lib/digest/provider");
+    const provider = createOpenAIDigestProvider({ apiKey: "test-key", client });
+
+    const result = await provider.generate({ prompt: "test" });
+
+    expect(result.sections).toHaveLength(8);
+    expect(result.sections[0]).not.toHaveProperty("whyItMatters");
+    expect(result.sections[1]?.whyItMatters).toBe("Reason 2");
+  });
 });
