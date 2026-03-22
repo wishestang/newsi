@@ -87,6 +87,22 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Node Version
+
+Prisma 7 expects a supported Node.js release line. Newsi is pinned to:
+
+- Node `20.19+`
+- Node `22.12+`
+- Node `24.x`
+
+If you use `nvm`, this repo includes [`.nvmrc`](/Users/bytedance/Documents/newsi/.nvmrc):
+
+```bash
+nvm use
+```
+
+If `pnpm exec prisma migrate deploy` fails with an empty `Schema engine error`, check `node -v` first. In this workspace, that failure reproduced on Node `25.2.1`; this is an inference based on Prisma's documented supported versions, not a confirmed Prisma upstream bug report.
+
 Useful routes:
 
 - `/signin`
