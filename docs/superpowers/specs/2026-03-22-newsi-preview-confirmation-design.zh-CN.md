@@ -247,13 +247,17 @@
 - 真正的 provider 调用由 `/preview` 对应的独立生成入口触发
 - 该生成入口必须保证同一条 `PreviewDigest` 只会被启动一次，避免重复 provider 调用
 - `failed` 状态下的重试复用同一条 `PreviewDigest` 记录，而不是创建新记录
+- 每次重试都必须刷新新的 `generationToken`
 
 陈旧结果失效规则：
 
 - provider 调用启动时，必须读取并携带当前 `generationToken`
 - provider 返回写回时，必须再次校验 token 仍然匹配当前 `PreviewDigest`
 - 若用户在生成过程中再次修改 `Topics` 或点击 `Clear interests`，则旧 token 立即失效
+- 若用户点击 `Try again`，旧 token 同样立即失效，并换发新的 token
 - 失效 token 对应的旧结果必须被直接丢弃，不允许覆盖当前最新状态
+
+`/preview` 的 `generating` 状态如何刷新到 `ready` 由实现决定，轮询、手动刷新或服务端重验证都可以，只要不改变上述所有权和失效规则。
 
 原因：
 
@@ -336,7 +340,8 @@
 - `Topics` 保存后跳转 `/preview`
 - `/preview` 在 `generating / ready / failed` 三种状态下的渲染
 - 用户确认后，`Today` 从“先去预览”状态切换到正式逻辑
-- 未确认前 `Archive` 为空
+- 首次配置且未确认前，`Archive` 为空
+- 若用户此前已有正式 `DailyDigest`，再次进入 `pending_preview` 时旧 `Archive` 继续可见
 
 ### 11.3 E2E
 
