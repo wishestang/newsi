@@ -9,6 +9,7 @@ import { PreviewGenerationKickoff } from "@/components/preview/preview-generatio
 import { StatusPanel } from "@/components/states/status-panel";
 import { db } from "@/lib/db";
 import { isLocalPreviewMode } from "@/lib/env";
+import { formatTodayDate } from "@/lib/digest/format";
 import {
   confirmPreviewInterestProfile,
   parsePreviewInterestProfile,
@@ -129,6 +130,7 @@ export default async function PreviewPage() {
           title={previewDigest.title}
           intro={previewDigest.intro}
           sections={previewDigest.sections}
+          digestDate={formatTodayDate()}
         />
         <PreviewActions onConfirmAction={confirmPreviewAction} canConfirm />
       </>
@@ -161,7 +163,7 @@ export default async function PreviewPage() {
     await confirmPreviewDigest(currentUser.id);
     revalidatePath("/preview");
     revalidatePath("/today");
-    revalidatePath("/archive");
+    revalidatePath("/history");
     revalidatePath("/topics");
     redirect("/today");
   }
@@ -223,6 +225,7 @@ export default async function PreviewPage() {
         title={preview.previewDigest.title ?? preview.content.title}
         intro={preview.previewDigest.intro ?? preview.content.intro}
         sections={preview.content.sections}
+        digestDate={formatTodayDate()}
       />
       <PreviewActions onConfirmAction={confirmAction} canConfirm />
     </>
