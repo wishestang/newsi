@@ -1,14 +1,20 @@
 import Image from "next/image";
 import { DigestMarkdown } from "@/components/digest/digest-markdown";
 
-type DigestSection = {
+type DigestEvent = {
   title: string;
-  summary: string[];
-  keyPoints: string[];
-  whyItMatters?: string;
+  summary: string;
+  keyFacts: string[];
 };
 
-function KeyPoint({ text }: { text: string }) {
+type DigestTopic = {
+  topic: string;
+  events: DigestEvent[];
+  insights: string[];
+  takeaway: string;
+};
+
+function BulletPoint({ text }: { text: string }) {
   return (
     <div className="relative pl-[42px]">
       <div className="absolute left-[24px] top-[8px] size-[6px] bg-accent" />
@@ -22,12 +28,12 @@ function KeyPoint({ text }: { text: string }) {
 export function DigestView({
   title,
   digestDate,
-  sections,
+  topics,
 }: {
   title: string;
   intro: string;
   digestDate: string;
-  sections: DigestSection[];
+  topics: DigestTopic[];
 }) {
   return (
     <article className="mx-auto max-w-[680px] px-10 py-32">
@@ -46,28 +52,58 @@ export function DigestView({
         {title}
       </h1>
 
-      {/* Intro — kept in props for backward compat but not rendered per Figma design */}
-
-      {/* Sections */}
+      {/* Topic blocks */}
       <div className="mt-16 flex flex-col gap-[96px]">
-        {sections.map((section) => (
-          <section key={section.title} className="flex flex-col gap-8">
+        {topics.map((topic) => (
+          <section key={topic.topic} className="flex flex-col gap-10">
             <h2 className="font-heading text-[24px] font-bold leading-[33px] tracking-[-0.24px] text-foreground">
-              {section.title}
+              {topic.topic}
             </h2>
-            <div className="flex flex-col gap-[23.4px]">
-              <DigestMarkdown content={section.summary.join("\n\n")} />
-              {section.keyPoints.length > 0 && (
-                <div className="border-t border-[var(--border-list)] pt-[17.61px]">
-                  <DigestMarkdown content={section.keyPoints.join("\n\n")} />
+
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-4">
+                <h3 className="font-mono text-[11px] font-bold uppercase leading-[16.5px] tracking-[2.2px] text-text-muted">
+                  Top Events
+                </h3>
+                <div className="flex flex-col gap-6">
+                  {topic.events.map((event) => (
+                    <div key={event.title} className="flex flex-col gap-4">
+                      <h4 className="font-heading text-[20px] font-bold leading-[28px] tracking-[-0.2px] text-foreground">
+                        <DigestMarkdown content={event.title} />
+                      </h4>
+                      <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
+                        <DigestMarkdown content={event.summary} />
+                      </div>
+                      <div className="flex flex-col gap-3 border-t border-[var(--border-list)] pt-[17.61px]">
+                        {event.keyFacts.map((fact) => (
+                          <BulletPoint key={fact} text={fact} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-            {section.whyItMatters ? (
-              <div className="text-sm italic text-text-muted">
-                <DigestMarkdown content={section.whyItMatters} />
               </div>
-            ) : null}
+
+              <div className="flex flex-col gap-4">
+                <h3 className="font-mono text-[11px] font-bold uppercase leading-[16.5px] tracking-[2.2px] text-text-muted">
+                  Insights
+                </h3>
+                <div className="flex flex-col gap-3">
+                  {topic.insights.map((insight) => (
+                    <BulletPoint key={insight} text={insight} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 border-t border-[var(--border-list)] pt-[17.61px]">
+                <h3 className="font-mono text-[11px] font-bold uppercase leading-[16.5px] tracking-[2.2px] text-text-muted">
+                  Takeaway
+                </h3>
+                <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
+                  <DigestMarkdown content={topic.takeaway} />
+                </div>
+              </div>
+            </div>
           </section>
         ))}
       </div>

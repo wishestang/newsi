@@ -7,11 +7,18 @@ describe("DigestView", () => {
     title: "Today's Synthesis",
     intro: "Two signals stood out across your tracked space today.",
     digestDate: "OCTOBER 24, 2023",
-    sections: [
+    topics: [
       {
-        title: "AI Agents",
-        summary: ["A first summary paragraph.", "A second summary paragraph."],
-        keyPoints: ["Speed: Faster than before", "Point two"],
+        topic: "AI Agents",
+        events: [
+          {
+            title: "A new agent IDE launched",
+            summary: "The IDE targets multi-agent workflows.",
+            keyFacts: ["Launched March 24", "Targets enterprise teams"],
+          },
+        ],
+        insights: ["Tooling is packaging orchestration into products."],
+        takeaway: "Execution layers are becoming productized.",
       },
     ],
   };
@@ -23,32 +30,40 @@ describe("DigestView", () => {
     expect(screen.getByText("OCTOBER 24, 2023")).toBeInTheDocument();
   });
 
-  it("renders section titles and content", () => {
+  it("renders topic titles and event content", () => {
     render(<DigestView {...defaultProps} />);
 
     expect(screen.getByText("AI Agents")).toBeInTheDocument();
-    expect(screen.getByText("A first summary paragraph.")).toBeInTheDocument();
+    expect(screen.getByText("A new agent IDE launched")).toBeInTheDocument();
+    expect(screen.getByText("The IDE targets multi-agent workflows.")).toBeInTheDocument();
   });
 
-  it("renders plain-text digests correctly (backward compat)", () => {
+  it("renders top events insights and takeaway sections", () => {
     render(<DigestView {...defaultProps} />);
 
-    expect(screen.getByText("A first summary paragraph.")).toBeInTheDocument();
-    expect(screen.getByText(/Speed/)).toBeInTheDocument();
-    expect(screen.getByText(/Faster than before/)).toBeInTheDocument();
-    expect(screen.getByText("Point two")).toBeInTheDocument();
+    expect(screen.getByText("Top Events")).toBeInTheDocument();
+    expect(screen.getByText("Insights")).toBeInTheDocument();
+    expect(screen.getByText("Takeaway")).toBeInTheDocument();
+    expect(screen.getByText("Tooling is packaging orchestration into products.")).toBeInTheDocument();
+    expect(screen.getByText("Execution layers are becoming productized.")).toBeInTheDocument();
   });
 
   it("renders markdown emphasis and links inside digest content", () => {
     render(
       <DigestView
         {...defaultProps}
-        sections={[
+        topics={[
           {
-            title: "AI Agents",
-            summary: ["A **bold** move with [source](https://example.com)."],
-            keyPoints: ["First point", "Second point"],
-            whyItMatters: "See **why** this matters.",
+            topic: "AI Agents",
+            events: [
+              {
+                title: "A **bold** move with [source](https://example.com).",
+                summary: "This topic changed quickly.",
+                keyFacts: ["First point", "Second point"],
+              },
+            ],
+            insights: ["See **why** this matters."],
+            takeaway: "One **clear** takeaway.",
           },
         ]}
       />,
@@ -61,17 +76,25 @@ describe("DigestView", () => {
     );
     expect(screen.getByText("First point")).toBeInTheDocument();
     expect(screen.getByText("why")).toBeInTheDocument();
+    expect(screen.getByText("clear")).toBeInTheDocument();
   });
 
   it("does not render unsafe javascript links", () => {
     render(
       <DigestView
         {...defaultProps}
-        sections={[
+        topics={[
           {
-            title: "AI Agents",
-            summary: ["Unsafe [link](javascript:alert(1))"],
-            keyPoints: ["Point one", "Point two"],
+            topic: "AI Agents",
+            events: [
+              {
+                title: "Unsafe [link](javascript:alert(1))",
+                summary: "Summary text.",
+                keyFacts: ["Point one", "Point two"],
+              },
+            ],
+            insights: ["Insight text."],
+            takeaway: "Takeaway text.",
           },
         ]}
       />,
