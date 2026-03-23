@@ -40,6 +40,21 @@ vi.mock("@google/genai", () => ({
   }),
 }));
 
+function buildTopic(index: number) {
+  return {
+    topic: `Topic ${index}`,
+    events: [
+      {
+        title: `Event ${index}`,
+        summary: `Event ${index} moved in the last 24 hours.`,
+        keyFacts: ["Fact one", "Fact two"],
+      },
+    ],
+    insights: [`Insight ${index}`],
+    takeaway: `Takeaway ${index}`,
+  };
+}
+
 describe("digest provider", () => {
   afterEach(() => {
     delete process.env.LLM_PROVIDER;
@@ -59,25 +74,9 @@ describe("digest provider", () => {
         parse: vi.fn().mockResolvedValue({
           output_parsed: {
             title: "Today's Synthesis",
-            intro: "Two signals stood out today.",
+            intro: "Three tracked spaces moved today.",
             readingTime: 6,
-            sections: [
-              {
-                title: "AI Agents",
-                summary: ["a", "b"],
-                keyPoints: ["c", "d"],
-              },
-              {
-                title: "Design Tools",
-                summary: ["a", "b"],
-                keyPoints: ["c", "d"],
-              },
-              {
-                title: "Indie Builders",
-                summary: ["a", "b"],
-                keyPoints: ["c", "d"],
-              },
-            ],
+            topics: [buildTopic(1), buildTopic(2), buildTopic(3)],
           },
         }),
       },
@@ -95,6 +94,7 @@ describe("digest provider", () => {
     });
 
     expect(result.title).toBe("Today's Synthesis");
+    expect(result.topics).toHaveLength(3);
     expect(client.responses.parse).toHaveBeenCalledOnce();
     expect(client.responses.parse.mock.calls[0][0]).toEqual(
       expect.objectContaining({
@@ -118,16 +118,19 @@ describe("digest provider", () => {
 
     googleGenAIMock.generateContent.mockResolvedValueOnce({
       text: JSON.stringify({
-        topic: "AI agents",
         generatedAt: "2026-03-24T08:00:00.000Z",
-        searchQueries: ["AI agents design tools latest"],
-        signals: [
+        topics: [
           {
-            headline: "OpenAI shipped a coding update",
-            summary: "A new model landed today.",
-            whyRelevant: "It matches the standing brief.",
-            sourceTitle: "OpenAI",
-            sourceUrl: "https://example.com/openai",
+            topic: "AI agents",
+            searchQueries: ["AI agents design tools latest"],
+            events: [
+              {
+                title: "OpenAI shipped a coding update",
+                summary: "A new model landed today.",
+                sourceTitle: "OpenAI",
+                sourceUrl: "https://example.com/openai",
+              },
+            ],
           },
         ],
       }),
@@ -137,14 +140,7 @@ describe("digest provider", () => {
         title: "Today's Synthesis",
         intro: "Two signals stood out today.",
         readingTime: 6,
-        sections: [
-          {
-            title: "AI Agents",
-            summary: ["a", "b"],
-            keyPoints: ["c", "d"],
-            whyItMatters: null,
-          },
-        ],
+        topics: [buildTopic(1)],
       }),
     });
 
@@ -172,10 +168,15 @@ describe("digest provider", () => {
         }),
       }),
     );
-    expect(result.title).toBe("Today's Synthesis");
+    expect(googleGenAIMock.generateContent.mock.calls[1][0]).toEqual(
+      expect.objectContaining({
+        contents: expect.stringContaining('"topics"'),
+      }),
+    );
+    expect(result.topics[0]?.topic).toBe("Topic 1");
   });
 
-  it("throws a clear error when Gemini returns invalid JSON", async () => {
+  it("throws a clear error when Gemini returns invalid evidence JSON", async () => {
     const client = {
       models: {
         generateContent: vi.fn().mockResolvedValue({
@@ -196,12 +197,12 @@ describe("digest provider", () => {
     );
   });
 
-  it("builds a normalized evidence bundle before Gemini synthesizes the final digest", async () => {
+  it("builds a normalized topic-grouped evidence bundle before Gemini synthesizes the final digest", async () => {
     const stageOneResponse = {
-      text: '```json\n{"topic":"AI coding","generatedAt":"2026-03-24T08:00:00.000Z","searchQueries":["AI coding tools last 24 hours"],"signals":[{"headline":"OpenAI shipped a new coding model","summary":"A new release landed today.","whyRelevant":"Directly relevant to the standing brief.","sourceTitle":"OpenAI","sourceUrl":"https://example.com/openai","publishedAt":"2026-03-24T06:00:00Z"}]}\n```',
+      text: '```json\n{"generatedAt":"2026-03-24T08:00:00.000Z","topics":[{"topic":"AI coding","searchQueries":["AI coding tools last 24 hours"],"events":[{"title":"OpenAI shipped a new coding model","summary":"A new release landed today.","sourceTitle":"OpenAI","sourceUrl":"https://example.com/openai","publishedAt":"2026-03-24T06:00:00Z"}]}]}\n```',
     };
     const stageTwoResponse = {
-      text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","sections":[{"title":"AI coding","summary":["第一句。","第二句。"],"keyPoints":["要点一","要点二"],"whyItMatters":"这是今天最相关的变化。"}]}\n```',
+      text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","topics":[{"topic":"AI coding","events":[{"title":"OpenAI shipped a new coding model","summary":"A new release landed today.","keyFacts":["发布于 3 月 24 日","面向 coding 工作流"]}],"insights":["AI coding 正在继续快速迭代。"],"takeaway":"AI coding 仍是今天最相关的主题。"}]}\n```',
     };
 
     const client = {
@@ -223,25 +224,38 @@ describe("digest provider", () => {
     await expect(provider.generate({ prompt: "test" })).resolves.toMatchObject({
       title: "每日情报摘要",
       intro: "今天最值得关注的是 AI coding 的新发布。",
-      sections: [{ title: "AI coding" }],
+      topics: [{ topic: "AI coding", takeaway: "AI coding 仍是今天最相关的主题。" }],
     });
     expect(client.models.generateContent).toHaveBeenCalledTimes(2);
   });
 
-  it("normalizes fenced Gemini digest JSON with introduction and extra fields during stage 2", async () => {
-    const evidenceResponse = {
-      text: '```json\n{"topic":"AI coding","generatedAt":"2026-03-24T08:00:00.000Z","searchQueries":["AI coding"],"signals":[{"headline":"Signal","summary":"A new release landed today.","whyRelevant":"Relevant to the brief.","sourceTitle":"Source","sourceUrl":"https://example.com/source"}]}\n```',
-    };
-    const digestResponse = {
-      text: '```json\n{"briefingDate":"2026-03-23","title":"每日简报","introduction":"今天有两条重要变化。","sections":[{"title":"AI","summary":"第一句。第二句。","keyPoints":["c","d"],"data":null,"whyItMatters":"x"}]}\n```',
-    };
-
+  it("throws a clear error when Gemini returns invalid digest JSON in stage 2", async () => {
     const client = {
       models: {
         generateContent: vi
           .fn()
-          .mockResolvedValueOnce(evidenceResponse)
-          .mockResolvedValueOnce(digestResponse),
+          .mockResolvedValueOnce({
+            text: JSON.stringify({
+              generatedAt: "2026-03-24T08:00:00.000Z",
+              topics: [
+                {
+                  topic: "AI coding",
+                  searchQueries: ["AI coding"],
+                  events: [
+                    {
+                      title: "Signal",
+                      summary: "A new release landed today.",
+                      sourceTitle: "Source",
+                      sourceUrl: "https://example.com/source",
+                    },
+                  ],
+                },
+              ],
+            }),
+          })
+          .mockResolvedValueOnce({
+            text: "not-json",
+          }),
       },
     };
 
@@ -252,42 +266,9 @@ describe("digest provider", () => {
       client,
     });
 
-    await expect(provider.generate({ prompt: "test" })).resolves.toMatchObject({
-      title: "每日简报",
-      intro: "今天有两条重要变化。",
-      sections: [{ title: "AI", whyItMatters: "x", summary: ["第一句。", "第二句。"] }],
-    });
-  });
-
-  it("accepts a single synthesized section when the evidence only supports one strong update", async () => {
-    const evidenceResponse = {
-      text: '```json\n{"topic":"AI coding","generatedAt":"2026-03-24T08:00:00.000Z","searchQueries":["AI coding"],"signals":[{"headline":"Signal","summary":"A new release landed today.","whyRelevant":"Relevant to the brief.","sourceTitle":"Source","sourceUrl":"https://example.com/source"}]}\n```',
-    };
-    const digestResponse = {
-      text: '```json\n{"title":"单条更新简报","introduction":"过去24小时只有一条高相关更新。","sections":[{"title":"AI","summary":"第一句。第二句。","keyPoints":["c","d"],"whyItMatters":"x"}]}\n```',
-    };
-
-    const client = {
-      models: {
-        generateContent: vi
-          .fn()
-          .mockResolvedValueOnce(evidenceResponse)
-          .mockResolvedValueOnce(digestResponse),
-      },
-    };
-
-    const { createGeminiDigestProvider } = await import("@/lib/digest/provider");
-    const provider = createGeminiDigestProvider({
-      apiKey: "gemini-key",
-      model: "gemini-2.5-flash",
-      client,
-    });
-
-    await expect(provider.generate({ prompt: "test" })).resolves.toMatchObject({
-      title: "单条更新简报",
-      intro: "过去24小时只有一条高相关更新。",
-      sections: [{ title: "AI", whyItMatters: "x" }],
-    });
+    await expect(provider.generate({ prompt: "test" })).rejects.toThrow(
+      "Gemini did not return valid JSON digest output.",
+    );
   });
 
   it("throws a configuration error when no API key is available", async () => {
@@ -297,36 +278,5 @@ describe("digest provider", () => {
     await expect(provider.generate({ prompt: "test" })).rejects.toThrow(
       "LLM_API_KEY is not configured.",
     );
-  });
-
-  it("normalizes nullable whyItMatters while accepting the new upper bounds", async () => {
-    const sections = Array.from({ length: 3 }, (_, index) => ({
-      title: `Section ${index + 1}`,
-      summary: ["a", "b", "c", "d", "e", "f"],
-      keyPoints: ["1", "2", "3", "4", "5", "6", "7", "8"],
-      whyItMatters: index === 0 ? null : `Reason ${index + 1}`,
-    }));
-
-    const client = {
-      responses: {
-        parse: vi.fn().mockResolvedValue({
-          output_parsed: {
-            title: "Today's Synthesis",
-            intro: "Two signals stood out today.",
-            readingTime: 20,
-            sections,
-          },
-        }),
-      },
-    };
-
-    const { createOpenAIDigestProvider } = await import("@/lib/digest/provider");
-    const provider = createOpenAIDigestProvider({ apiKey: "test-key", client });
-
-    const result = await provider.generate({ prompt: "test" });
-
-    expect(result.sections).toHaveLength(3);
-    expect(result.sections[0]).not.toHaveProperty("whyItMatters");
-    expect(result.sections[1]?.whyItMatters).toBe("Reason 2");
   });
 });
