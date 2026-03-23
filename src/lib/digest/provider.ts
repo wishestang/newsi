@@ -128,27 +128,6 @@ function extractGeminiJsonCandidate(responseText: string) {
   return candidateSource;
 }
 
-function splitSummaryText(summary: string) {
-  const sentences =
-    summary.match(/[^。！？.!?\n]+[。！？.!?]?/gu)?.map((item) => item.trim()).filter(Boolean) ??
-    [];
-
-  if (sentences.length >= 2) {
-    return sentences.slice(0, 6);
-  }
-
-  const paragraphs = summary
-    .split(/\n+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  if (paragraphs.length >= 2) {
-    return paragraphs.slice(0, 6);
-  }
-
-  return [summary.trim(), `${summary.trim()} (continued)`];
-}
-
 function estimateReadingTimeFromDigest(input: {
   intro: string;
   topics: Array<{

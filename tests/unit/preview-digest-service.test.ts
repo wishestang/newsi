@@ -48,10 +48,25 @@ describe("preview digest service", () => {
         title: "Today's Synthesis",
         intro: "Two product signals stood out today.",
         readingTime: 6,
-        sections: [
-          { title: "AI Agents", summary: ["a", "b"], keyPoints: ["c", "d"] },
-          { title: "Design Tools", summary: ["a", "b"], keyPoints: ["c", "d"] },
-          { title: "Indie Builders", summary: ["a", "b"], keyPoints: ["c", "d"] },
+        topics: [
+          {
+            topic: "AI Agents",
+            events: [{ title: "A1", summary: "a", keyFacts: ["c", "d"] }],
+            insights: ["AI insight"],
+            takeaway: "AI takeaway",
+          },
+          {
+            topic: "Design Tools",
+            events: [{ title: "D1", summary: "a", keyFacts: ["c", "d"] }],
+            insights: ["Design insight"],
+            takeaway: "Design takeaway",
+          },
+          {
+            topic: "Indie Builders",
+            events: [{ title: "I1", summary: "a", keyFacts: ["c", "d"] }],
+            insights: ["Indie insight"],
+            takeaway: "Indie takeaway",
+          },
         ],
       }),
     };
@@ -190,10 +205,25 @@ describe("preview digest service", () => {
         title: "Today's Synthesis",
         intro: "Preview intro",
         readingTime: 5,
-        sections: [
-          { title: "A", summary: ["a", "b"], keyPoints: ["c", "d"] },
-          { title: "B", summary: ["a", "b"], keyPoints: ["c", "d"] },
-          { title: "C", summary: ["a", "b"], keyPoints: ["c", "d"] },
+        topics: [
+          {
+            topic: "A",
+            events: [{ title: "A1", summary: "a", keyFacts: ["c", "d"] }],
+            insights: ["A insight"],
+            takeaway: "A takeaway",
+          },
+          {
+            topic: "B",
+            events: [{ title: "B1", summary: "a", keyFacts: ["c", "d"] }],
+            insights: ["B insight"],
+            takeaway: "B takeaway",
+          },
+          {
+            topic: "C",
+            events: [{ title: "C1", summary: "a", keyFacts: ["c", "d"] }],
+            insights: ["C insight"],
+            takeaway: "C takeaway",
+          },
         ],
       },
       providerName: "gemini",
