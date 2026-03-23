@@ -81,6 +81,9 @@ describe("preview state", () => {
   });
 
   it("confirms a ready preview into an active profile with today's digest available immediately", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-22T09:00:00+08:00"));
+
     const { confirmPreviewInterestProfile, getLocalTodayState, getLocalArchiveItems } =
       await import("@/lib/preview-state");
 
@@ -123,5 +126,7 @@ describe("preview state", () => {
         readingTime: 5,
       },
     ]);
+
+    vi.useRealTimers();
   });
 });

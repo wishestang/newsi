@@ -33,4 +33,10 @@ describe("timezone helpers", () => {
       "2026-03-23",
     );
   });
+
+  it("does not skip an extra day for UTC timestamps late in the Beijing day", () => {
+    expect(getNextBeijingDigestDayKey(new Date("2026-03-22T14:27:25.011Z"))).toBe(
+      "2026-03-23",
+    );
+  });
 });
