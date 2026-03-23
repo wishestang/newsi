@@ -58,6 +58,18 @@ describe("preview state", () => {
         digest: {
           title: "Today's Synthesis",
           readingTime: 5,
+          topics: expect.arrayContaining([
+            expect.objectContaining({
+              topic: "AI agents",
+              events: expect.arrayContaining([
+                expect.objectContaining({
+                  title: expect.any(String),
+                }),
+              ]),
+              insights: expect.any(Array),
+              takeaway: expect.any(String),
+            }),
+          ]),
         },
       },
     });
@@ -100,10 +112,25 @@ describe("preview state", () => {
             title: "Today's Synthesis",
             intro: "Preview intro",
             readingTime: 5,
-            sections: [
-              { title: "A", summary: ["a", "b"], keyPoints: ["c", "d"] },
-              { title: "B", summary: ["a", "b"], keyPoints: ["c", "d"] },
-              { title: "C", summary: ["a", "b"], keyPoints: ["c", "d"] },
+            topics: [
+              {
+                topic: "A",
+                events: [{ title: "A1", summary: "a", keyFacts: ["c", "d"] }],
+                insights: ["A insight"],
+                takeaway: "A takeaway",
+              },
+              {
+                topic: "B",
+                events: [{ title: "B1", summary: "a", keyFacts: ["c", "d"] }],
+                insights: ["B insight"],
+                takeaway: "B takeaway",
+              },
+              {
+                topic: "C",
+                events: [{ title: "C1", summary: "a", keyFacts: ["c", "d"] }],
+                insights: ["C insight"],
+                takeaway: "C takeaway",
+              },
             ],
           },
         },

@@ -69,7 +69,7 @@ export default async function TodayPage() {
         <DigestView
           title={previewState.digest.title}
           intro={previewState.digest.intro}
-          sections={previewState.digest.sections}
+          topics={previewState.digest.topics}
           digestDate={formatTodayDate()}
         />
       );
@@ -214,7 +214,7 @@ export default async function TodayPage() {
     <DigestView
       title={digest.title ?? content.title}
       intro={digest.intro ?? content.intro}
-      sections={content.sections}
+      topics={content.topics}
       digestDate={formatDigestDate(digest.digestDayKey)}
     />
   );

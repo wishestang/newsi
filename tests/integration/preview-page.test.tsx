@@ -109,10 +109,19 @@ describe("PreviewPage", () => {
         title: "Today's Synthesis",
         intro: "Two product signals stood out today.",
         readingTime: 6,
-        sections: [
-          { title: "AI Agents", summary: ["a", "b"], keyPoints: ["c", "d"] },
-          { title: "Design Tools", summary: ["a", "b"], keyPoints: ["c", "d"] },
-          { title: "Indie Builders", summary: ["a", "b"], keyPoints: ["c", "d"] },
+        topics: [
+          {
+            topic: "AI Agents",
+            events: [
+              {
+                title: "A new agent IDE launched",
+                summary: "The IDE targets multi-agent workflows.",
+                keyFacts: ["Launched today", "Targets enterprise teams"],
+              },
+            ],
+            insights: ["Tooling is packaging orchestration into products."],
+            takeaway: "Execution layers are becoming productized.",
+          },
         ],
       },
     });
@@ -122,6 +131,7 @@ describe("PreviewPage", () => {
     render(await PreviewPage());
 
     expect(screen.getByRole("heading", { name: "Today's Synthesis" })).toBeInTheDocument();
+    expect(screen.getByText("Top Events")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Confirm and start daily digests" }),
     ).toBeInTheDocument();

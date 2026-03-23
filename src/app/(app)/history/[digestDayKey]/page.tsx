@@ -46,7 +46,7 @@ export default async function HistoryDetailPage({
       <DigestView
         title={previewProfile.activeDigest.digest.title}
         intro={previewProfile.activeDigest.digest.intro}
-        sections={previewProfile.activeDigest.digest.sections}
+        topics={previewProfile.activeDigest.digest.topics}
         digestDate={formatDigestDate(digestDayKey)}
       />
     );
@@ -104,7 +104,7 @@ export default async function HistoryDetailPage({
     <DigestView
       title={digest.title ?? content.title}
       intro={digest.intro ?? content.intro}
-      sections={content.sections}
+      topics={content.topics}
       digestDate={formatDigestDate(digestDayKey)}
     />
   );

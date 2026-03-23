@@ -215,20 +215,27 @@ function buildPreviewDigest(interestText: string): DigestResponse {
     title: "Today's Synthesis",
     intro: `Newsi prepared a preview synthesis for your standing brief on ${focusAreas.join(", ")}.`,
     readingTime: 5,
-    sections: focusAreas.map((focusArea, index) => ({
-      title: focusArea,
-      summary: [
-        `Signals around ${focusArea.toLowerCase()} are the most relevant part of this brief right now, so the preview keeps the summary centered on what changed and why it matters.`,
-        `In the full product, this section would be generated from live web research, but the preview keeps the output shape stable so you can evaluate the reading experience locally.`,
+    topics: focusAreas.map((focusArea, index) => ({
+      topic: focusArea,
+      events: [
+        {
+          title: `${focusArea} surfaced as a top tracked event`,
+          summary:
+            `Signals around ${focusArea.toLowerCase()} are the most relevant part of this brief right now, so the preview keeps the summary centered on what changed in the last cycle.`,
+          keyFacts: [
+            `${focusArea} remains a first-class topic in the daily synthesis.`,
+            "The preview keeps event summaries concise and fact-led.",
+          ],
+        },
       ],
-      keyPoints: [
-        `${focusArea} is preserved as a first-class topic in the daily synthesis.`,
+      insights: [
         "The digest favors concise editorial synthesis over feed-style aggregation.",
+        "Each topic separates what happened from what it means.",
       ],
-      whyItMatters:
+      takeaway:
         index === 0
           ? "This mock digest exists to simulate the final reading surface before live provider output is configured."
-          : undefined,
+          : `${focusArea} would continue to receive a dedicated facts-and-insights block in the live product.`,
     })),
   };
 }

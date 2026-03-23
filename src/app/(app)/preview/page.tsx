@@ -129,7 +129,7 @@ export default async function PreviewPage() {
         <DigestView
           title={previewDigest.title}
           intro={previewDigest.intro}
-          sections={previewDigest.sections}
+          topics={previewDigest.topics}
           digestDate={formatTodayDate()}
         />
         <PreviewActions onConfirmAction={confirmPreviewAction} canConfirm />
@@ -224,7 +224,7 @@ export default async function PreviewPage() {
       <DigestView
         title={preview.previewDigest.title ?? preview.content.title}
         intro={preview.previewDigest.intro ?? preview.content.intro}
-        sections={preview.content.sections}
+        topics={preview.content.topics}
         digestDate={formatTodayDate()}
       />
       <PreviewActions onConfirmAction={confirmAction} canConfirm />
