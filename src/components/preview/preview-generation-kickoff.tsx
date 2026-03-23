@@ -3,22 +3,42 @@
 import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-export function PreviewGenerationKickoff() {
+const kickedOffGenerationTokens = new Set<string>();
+
+export function PreviewGenerationKickoff({
+  generationToken,
+}: {
+  generationToken: string;
+}) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
   useEffect(() => {
+    if (kickedOffGenerationTokens.has(generationToken)) {
+      return;
+    }
+
+    kickedOffGenerationTokens.add(generationToken);
     let cancelled = false;
 
     async function run() {
-      await fetch("/api/preview/generate", {
-        method: "POST",
-      });
-
-      if (!cancelled) {
-        startTransition(() => {
-          router.refresh();
+      try {
+        const response = await fetch("/api/preview/generate", {
+          method: "POST",
         });
+
+        if (!response.ok) {
+          kickedOffGenerationTokens.delete(generationToken);
+          return;
+        }
+
+        if (!cancelled) {
+          startTransition(() => {
+            router.refresh();
+          });
+        }
+      } catch {
+        kickedOffGenerationTokens.delete(generationToken);
       }
     }
 
@@ -27,7 +47,7 @@ export function PreviewGenerationKickoff() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [generationToken, router]);
 
   return null;
 }

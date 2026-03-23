@@ -88,7 +88,7 @@ export default async function PreviewPage() {
     if (profile.preview.status === "generating") {
       return (
         <>
-          <PreviewGenerationKickoff />
+          <PreviewGenerationKickoff generationToken={profile.preview.generationToken} />
           <StatusPanel
             label="Generating"
             body="Newsi is preparing a real preview digest from your current Topics."
@@ -185,7 +185,7 @@ export default async function PreviewPage() {
   if (preview.previewDigest.status === "generating") {
     return (
       <>
-        <PreviewGenerationKickoff />
+        <PreviewGenerationKickoff generationToken={preview.previewDigest.generationToken} />
         <StatusPanel
           label="Generating"
           body="Newsi is preparing a real preview digest from your current Topics."
