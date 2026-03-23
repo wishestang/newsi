@@ -13,8 +13,8 @@ export const digestResponseSchema = z.object({
         whyItMatters: z.string().min(1).optional(),
       }),
     )
-    .min(3)
-    .max(8),
+    .min(1)
+    .max(3),
 });
 
 export type DigestResponse = z.infer<typeof digestResponseSchema>;

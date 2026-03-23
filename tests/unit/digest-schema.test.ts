@@ -16,13 +16,24 @@ describe("digestResponseSchema", () => {
       title: "Today's Synthesis",
       intro: "A short intro",
       readingTime: 20,
-      sections: Array.from({ length: 8 }, (_, index) => buildSection(index + 1)),
+      sections: Array.from({ length: 3 }, (_, index) => buildSection(index + 1)),
     });
 
     expect(result.success).toBe(true);
   });
 
-  it("still rejects digests with too few sections", () => {
+  it("accepts a single high-signal section", () => {
+    const result = digestResponseSchema.safeParse({
+      title: "Today's Synthesis",
+      intro: "A short intro",
+      readingTime: 5,
+      sections: [buildSection(1)],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("still rejects digests with no sections", () => {
     const result = digestResponseSchema.safeParse({
       title: "Today's Synthesis",
       intro: "A short intro",
