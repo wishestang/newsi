@@ -1,5 +1,6 @@
+import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
-import { zodResponseFormat, zodTextFormat } from "openai/helpers/zod";
+import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import type { DigestResponse } from "@/lib/digest/schema";
 import { digestResponseSchema } from "@/lib/digest/schema";
@@ -20,17 +21,11 @@ interface OpenAIResponsesClient {
   };
 }
 
-interface OpenAIChatCompletionsClient {
-  chat: {
-    completions: {
-      parse(input: unknown): Promise<{
-        choices: Array<{
-          message?: {
-            parsed?: z.infer<typeof openAIDigestResponseSchema> | null;
-          };
-        }>;
-      }>;
-    };
+interface GeminiGenerateContentClient {
+  models: {
+    generateContent(input: unknown): Promise<{
+      text?: string | null;
+    }>;
   };
 }
 
@@ -53,7 +48,6 @@ const openAIDigestResponseSchema = z.object({
 
 const DEFAULT_OPENAI_MODEL = "gpt-5.4";
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/";
 
 export function parseDigestResult(raw: unknown): DigestResponse {
   return digestResponseSchema.parse(raw);
@@ -141,34 +135,38 @@ export function createGeminiDigestProvider({
 }: {
   apiKey?: string;
   model?: string;
-  client?: OpenAIChatCompletionsClient;
+  client?: GeminiGenerateContentClient;
 } = {}): DigestProvider {
-  const chatClient =
-    client ?? (apiKey ? new OpenAI({ apiKey, baseURL: GEMINI_OPENAI_BASE_URL }) : null);
+  const geminiClient = client ?? (apiKey ? new GoogleGenAI({ apiKey }) : null);
 
   return {
     name: "gemini",
     model,
     async generate({ prompt }) {
-      if (!chatClient) {
+      if (!geminiClient) {
         throw new Error("GEMINI_API_KEY or LLM_API_KEY is not configured.");
       }
 
-      const completion = await chatClient.chat.completions.parse({
+      const response = await geminiClient.models.generateContent({
         model,
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        response_format: zodResponseFormat(openAIDigestResponseSchema, "daily_digest"),
+        contents: prompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+        },
       });
 
-      const parsed = completion.choices[0]?.message?.parsed;
+      const responseText = response.text?.trim();
 
-      if (!parsed) {
-        throw new Error("Gemini did not return structured digest output.");
+      if (!responseText) {
+        throw new Error("Gemini did not return any digest output.");
+      }
+
+      let parsed: z.infer<typeof openAIDigestResponseSchema>;
+
+      try {
+        parsed = openAIDigestResponseSchema.parse(JSON.parse(responseText));
+      } catch {
+        throw new Error("Gemini did not return valid JSON digest output.");
       }
 
       return finalizeDigest(parsed);

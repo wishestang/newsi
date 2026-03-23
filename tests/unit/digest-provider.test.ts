@@ -6,6 +6,11 @@ const openaiMock = vi.hoisted(() => ({
   chatParse: vi.fn(),
 }));
 
+const googleGenAIMock = vi.hoisted(() => ({
+  constructor: vi.fn(),
+  generateContent: vi.fn(),
+}));
+
 vi.mock("openai", () => ({
   default: vi.fn(function (this: unknown, options) {
     openaiMock.constructor(options);
@@ -23,6 +28,18 @@ vi.mock("openai", () => ({
   }),
 }));
 
+vi.mock("@google/genai", () => ({
+  GoogleGenAI: vi.fn(function (this: unknown, options) {
+    googleGenAIMock.constructor(options);
+
+    return {
+      models: {
+        generateContent: googleGenAIMock.generateContent,
+      },
+    };
+  }),
+}));
+
 describe("digest provider", () => {
   afterEach(() => {
     delete process.env.LLM_PROVIDER;
@@ -32,6 +49,8 @@ describe("digest provider", () => {
     openaiMock.constructor.mockReset();
     openaiMock.responsesParse.mockReset();
     openaiMock.chatParse.mockReset();
+    googleGenAIMock.constructor.mockReset();
+    googleGenAIMock.generateContent.mockReset();
   });
 
   it("returns parsed digest content from the OpenAI responses client", async () => {
@@ -91,41 +110,38 @@ describe("digest provider", () => {
     );
   });
 
-  it("selects Gemini when requested and uses chat.completions.parse without web search", async () => {
+  it("selects Gemini when requested and uses Google Search grounding", async () => {
     process.env.LLM_PROVIDER = "gemini";
     process.env.LLM_API_KEY = "legacy-key";
     process.env.GEMINI_API_KEY = "gemini-key";
     process.env.LLM_MODEL = "gemini-2.5-flash";
 
-    openaiMock.chatParse.mockResolvedValue({
-      choices: [
-        {
-          message: {
-            parsed: {
-              title: "Today's Synthesis",
-              intro: "Two signals stood out today.",
-              readingTime: 6,
-              sections: [
-                {
-                  title: "AI Agents",
-                  summary: ["a", "b"],
-                  keyPoints: ["c", "d"],
-                },
-                {
-                  title: "Design Tools",
-                  summary: ["a", "b"],
-                  keyPoints: ["c", "d"],
-                },
-                {
-                  title: "Indie Builders",
-                  summary: ["a", "b"],
-                  keyPoints: ["c", "d"],
-                },
-              ],
-            },
+    googleGenAIMock.generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        title: "Today's Synthesis",
+        intro: "Two signals stood out today.",
+        readingTime: 6,
+        sections: [
+          {
+            title: "AI Agents",
+            summary: ["a", "b"],
+            keyPoints: ["c", "d"],
+            whyItMatters: null,
           },
-        },
-      ],
+          {
+            title: "Design Tools",
+            summary: ["a", "b"],
+            keyPoints: ["c", "d"],
+            whyItMatters: null,
+          },
+          {
+            title: "Indie Builders",
+            summary: ["a", "b"],
+            keyPoints: ["c", "d"],
+            whyItMatters: null,
+          },
+        ],
+      }),
     });
 
     const { createDigestProvider } = await import("@/lib/digest/provider");
@@ -135,27 +151,45 @@ describe("digest provider", () => {
       prompt: "Generate a digest about AI agents and design tools.",
     });
 
-    expect(openaiMock.constructor).toHaveBeenCalledWith(
+    expect(googleGenAIMock.constructor).toHaveBeenCalledWith(
       expect.objectContaining({
         apiKey: "gemini-key",
-        baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
       }),
     );
     expect(openaiMock.responsesParse).not.toHaveBeenCalled();
-    expect(openaiMock.chatParse).toHaveBeenCalledOnce();
-    expect(openaiMock.chatParse.mock.calls[0][0]).toEqual(
+    expect(openaiMock.chatParse).not.toHaveBeenCalled();
+    expect(googleGenAIMock.generateContent).toHaveBeenCalledOnce();
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]).toEqual(
       expect.objectContaining({
         model: "gemini-2.5-flash",
-        messages: [
-          {
-            role: "user",
-            content: "Generate a digest about AI agents and design tools.",
-          },
-        ],
+        contents: "Generate a digest about AI agents and design tools.",
+        config: expect.objectContaining({
+          tools: [{ googleSearch: {} }],
+        }),
       }),
     );
-    expect(openaiMock.chatParse.mock.calls[0][0]).not.toHaveProperty("tools");
     expect(result.title).toBe("Today's Synthesis");
+  });
+
+  it("throws a clear error when Gemini returns invalid JSON", async () => {
+    const client = {
+      models: {
+        generateContent: vi.fn().mockResolvedValue({
+          text: "not-json",
+        }),
+      },
+    };
+
+    const { createGeminiDigestProvider } = await import("@/lib/digest/provider");
+    const provider = createGeminiDigestProvider({
+      apiKey: "gemini-key",
+      model: "gemini-2.5-flash",
+      client,
+    });
+
+    await expect(provider.generate({ prompt: "test" })).rejects.toThrow(
+      "Gemini did not return valid JSON digest output.",
+    );
   });
 
   it("throws a configuration error when no API key is available", async () => {
