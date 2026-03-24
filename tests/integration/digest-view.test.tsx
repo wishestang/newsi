@@ -11,16 +11,11 @@ describe("DigestView", () => {
       {
         topic: "AI Agents",
         markdown: [
-          "### Top Events",
+          "1. **A new agent IDE launched, adoption up 200%**",
+          "   The IDE targets multi-agent workflows and saw rapid early adoption.",
+          "   （[Example](https://example.com)）",
           "",
-          "1. **A new agent IDE launched**",
-          "   The IDE targets multi-agent workflows.",
-          "   Insight: Tooling is packaging orchestration into products.",
-          "   [来源：Example · 2026-03-24](https://example.com)",
-          "",
-          "### Summary",
-          "",
-          "Execution layers are becoming productized.",
+          "> Execution layers are becoming productized.",
         ].join("\n"),
       },
     ],
@@ -37,19 +32,23 @@ describe("DigestView", () => {
     render(<DigestView {...defaultProps} />);
 
     expect(screen.getByText("AI Agents")).toBeInTheDocument();
-    expect(screen.getByText("A new agent IDE launched")).toBeInTheDocument();
-    expect(screen.getByText(/The IDE targets multi-agent workflows\./)).toBeInTheDocument();
+    expect(screen.getByText(/A new agent IDE launched/)).toBeInTheDocument();
+    expect(screen.getByText(/The IDE targets multi-agent workflows/)).toBeInTheDocument();
   });
 
-  it("renders top events and summary headings inside topic markdown", () => {
+  it("renders event content and closing assessment blockquote", () => {
     render(<DigestView {...defaultProps} />);
 
-    expect(screen.getByText("Top Events")).toBeInTheDocument();
-    expect(screen.getByText("Summary")).toBeInTheDocument();
+    expect(screen.getByText(/A new agent IDE launched/)).toBeInTheDocument();
+    expect(screen.getByText(/adoption up 200%/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Tooling is packaging orchestration into products\./),
+      screen.getByText(/The IDE targets multi-agent workflows/),
     ).toBeInTheDocument();
-    expect(screen.getByText("Execution layers are becoming productized.")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Execution layers are becoming productized\./),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Top Events")).not.toBeInTheDocument();
+    expect(screen.queryByText("Summary")).not.toBeInTheDocument();
   });
 
   it("renders markdown emphasis and links inside digest content", () => {
@@ -60,16 +59,11 @@ describe("DigestView", () => {
           {
             topic: "AI Agents",
             markdown: [
-              "### Top Events",
-              "",
               "1. **A bold move**",
-              "   This topic changed quickly.",
-              "   Insight: See **why** this matters.",
+              "   This topic changed quickly. See **why** this matters.",
               "   [source](https://example.com)",
               "",
-              "### Summary",
-              "",
-              "One **clear** takeaway.",
+              "> One **clear** takeaway.",
             ].join("\n"),
           },
         ]}
@@ -93,16 +87,10 @@ describe("DigestView", () => {
           {
             topic: "AI Agents",
             markdown: [
-              "### Top Events",
-              "",
               "1. **Unsafe item**",
-              "   Summary text.",
-              "   Insight: Insight text.",
-              "   Unsafe [link](javascript:alert(1))",
+              "   Summary text. Unsafe [link](javascript:alert(1))",
               "",
-              "### Summary",
-              "",
-              "Takeaway text.",
+              "> Takeaway text.",
             ].join("\n"),
           },
         ]}
