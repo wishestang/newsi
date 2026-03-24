@@ -97,7 +97,7 @@ describe("digest provider", () => {
     expect(client.responses.parse.mock.calls[0][0]).toEqual(
       expect.objectContaining({
         model: "gpt-test",
-        input: "Generate a digest about AI agents and design tools.",
+        input: expect.stringContaining("Generate a digest about AI agents and design tools."),
         tools: [
           {
             type: "web_search_preview",
@@ -114,22 +114,6 @@ describe("digest provider", () => {
     process.env.GEMINI_API_KEY = "gemini-key";
     process.env.LLM_MODEL = "gemini-2.5-flash";
 
-    googleGenAIMock.generateContent.mockResolvedValueOnce({
-      text: JSON.stringify({
-        topics: [
-          {
-            topic: "AI agents",
-            markdown: [
-              "### Signals",
-              "",
-              "1. **OpenAI shipped a coding update**",
-              "   A new model landed today.",
-              "   [来源：OpenAI · 2026-03-24](https://example.com/openai)",
-            ].join("\n"),
-          },
-        ],
-      }),
-    });
     googleGenAIMock.generateContent.mockResolvedValueOnce({
       text: JSON.stringify({
         title: "Today's Synthesis",
@@ -153,43 +137,31 @@ describe("digest provider", () => {
     );
     expect(openaiMock.responsesParse).not.toHaveBeenCalled();
     expect(openaiMock.chatParse).not.toHaveBeenCalled();
-    expect(googleGenAIMock.generateContent).toHaveBeenCalledTimes(2);
+    expect(googleGenAIMock.generateContent).toHaveBeenCalledTimes(1);
     expect(googleGenAIMock.generateContent.mock.calls[0][0]).toEqual(
       expect.objectContaining({
         model: "gemini-2.5-flash",
         contents: expect.stringContaining("Generate a digest about AI agents and design tools."),
         config: expect.objectContaining({
           tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json",
+          responseJsonSchema: expect.any(Object),
         }),
       }),
     );
     expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).toContain(
-      'each topic must contain: topic and markdown',
+      "### Top Events",
     );
     expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).toContain(
+      "### Summary",
+    );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
       "### Signals",
-    );
-    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
-      "generatedAt",
-    );
-    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
-      "searchQueries",
-    );
-    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
-      "topics must be an array with fields: topic, searchQueries, events",
-    );
-    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
-      "Each event must include: title, summary, sourceTitle, sourceUrl, publishedAt (optional).",
-    );
-    expect(googleGenAIMock.generateContent.mock.calls[1][0]).toEqual(
-      expect.objectContaining({
-        contents: expect.stringContaining('"topics"'),
-      }),
     );
     expect(result.topics[0]?.topic).toBe("Topic 1");
   });
 
-  it("throws a clear error when Gemini returns invalid evidence JSON", async () => {
+  it("throws a clear error when Gemini returns invalid digest JSON", async () => {
     const client = {
       models: {
         generateContent: vi.fn().mockResolvedValue({
@@ -206,24 +178,18 @@ describe("digest provider", () => {
     });
 
     await expect(provider.generate({ prompt: "test" })).rejects.toThrow(
-      "Gemini did not return valid JSON evidence output.",
+      "Gemini did not return valid JSON digest output.",
     );
   });
 
-  it("builds a normalized topic-grouped evidence bundle before Gemini synthesizes the final digest", async () => {
-    const stageOneResponse = {
-      text: '```json\n{"topics":[{"topic":"AI coding","markdown":"### Signals\\n\\n1. **OpenAI shipped a new coding model**\\n   A new release landed today.\\n   [来源：OpenAI · 2026-03-24](https://example.com/openai)"}]}\n```',
-    };
-    const stageTwoResponse = {
+  it("builds a normalized digest from a single Gemini structured-output response", async () => {
+    const response = {
       text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","topics":[{"topic":"AI coding","markdown":"1. **OpenAI 发布了新的编程模型**\\n   新版本今天正式上线，迭代速度加快。（[OpenAI · 2026-03-24](https://example.com/openai)）\\n\\n> AI coding 仍是今天最相关的主题。"}]}\n```',
     };
 
     const client = {
       models: {
-        generateContent: vi
-          .fn()
-          .mockResolvedValueOnce(stageOneResponse)
-          .mockResolvedValueOnce(stageTwoResponse),
+        generateContent: vi.fn().mockResolvedValueOnce(response),
       },
     };
 
@@ -244,63 +210,13 @@ describe("digest provider", () => {
         },
       ],
     });
-    expect(client.models.generateContent).toHaveBeenCalledTimes(2);
+    expect(client.models.generateContent).toHaveBeenCalledTimes(1);
   });
 
-  it("throws a clear error when Gemini returns invalid digest JSON in stage 2", async () => {
-    const client = {
-      models: {
-        generateContent: vi
-          .fn()
-          .mockResolvedValueOnce({
-            text: JSON.stringify({
-              topics: [
-                {
-                  topic: "AI coding",
-                  markdown: [
-                    "### Signals",
-                    "",
-                    "1. **Signal**",
-                    "   A new release landed today.",
-                    "   [来源：Source · 2026-03-24](https://example.com/source)",
-                  ].join("\n"),
-                },
-              ],
-            }),
-          })
-          .mockResolvedValueOnce({
-            text: "not-json",
-          }),
-      },
-    };
-
-    const { createGeminiDigestProvider } = await import("@/lib/digest/provider");
-    const provider = createGeminiDigestProvider({
-      apiKey: "gemini-key",
-      model: "gemini-2.5-flash",
-      client,
-    });
-
-    await expect(provider.generate({ prompt: "test" })).rejects.toThrow(
-      "Gemini did not return valid JSON digest output.",
-    );
-  });
-
-  it("synthesis prompt uses new markdown format instructions", async () => {
+  it("Gemini prompt uses the final markdown format instructions in a single pass", async () => {
     process.env.LLM_PROVIDER = "gemini";
     process.env.GEMINI_API_KEY = "gemini-key";
 
-    googleGenAIMock.generateContent.mockResolvedValueOnce({
-      text: JSON.stringify({
-        topics: [
-          {
-            topic: "AI coding",
-            markdown:
-              "### Signals\n\n1. **Signal**\n   A new release.\n   [来源：Source · 2026-03-24](https://example.com/source)",
-          },
-        ],
-      }),
-    });
     googleGenAIMock.generateContent.mockResolvedValueOnce({
       text: JSON.stringify({
         title: "Daily Digest",
@@ -318,14 +234,11 @@ describe("digest provider", () => {
     const provider = createDigestProvider();
     await provider.generate({ prompt: "test" });
 
-    const synthesisPrompt =
-      googleGenAIMock.generateContent.mock.calls[1][0]?.contents;
-    expect(synthesisPrompt).toContain("Do NOT use section headings");
-    expect(synthesisPrompt).toContain("3-7 numbered events");
-    expect(synthesisPrompt).toContain("blockquote");
-    expect(synthesisPrompt).not.toContain('"### Top Events" heading');
-    expect(synthesisPrompt).not.toContain('"Insight:" line');
-    expect(synthesisPrompt).not.toContain('"### Summary" heading');
+    const prompt = googleGenAIMock.generateContent.mock.calls[0][0]?.contents;
+    expect(prompt).toContain("### Top Events");
+    expect(prompt).toContain("### Summary");
+    expect(prompt).toContain("Insight:");
+    expect(prompt).not.toContain("### Signals");
   });
 
   it("throws a configuration error when no API key is available", async () => {

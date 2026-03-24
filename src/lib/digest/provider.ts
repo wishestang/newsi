@@ -2,12 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
-import {
-  evidenceBundleSchema,
-  type EvidenceBundle,
-} from "@/lib/digest/evidence-schema";
 import type { DigestResponse } from "@/lib/digest/schema";
 import { digestResponseSchema } from "@/lib/digest/schema";
+import { TOPIC_MARKDOWN_FORMAT } from "@/lib/digest/prompt";
 
 export interface DigestProvider {
   name?: string;
@@ -136,51 +133,19 @@ function estimateReadingTimeFromDigest(input: {
   return Math.min(20, Math.max(3, Math.round(words / 180) || 3));
 }
 
-function buildEvidencePrompt(prompt: string) {
+function buildGeminiDigestPrompt(prompt: string) {
   return `${prompt}
 
-Return exactly one JSON object for an evidence bundle.
+Return exactly one JSON object for the final digest.
 
 Requirements:
 - Use Google Search grounding to find the most relevant recent signals.
 - Output only valid JSON. Do not wrap in markdown fences.
-- Required top-level field: topics.
-- topics must be an array of 1 to 3 items.
-- each topic must contain: topic and markdown.
-- each markdown block must contain a "### Signals" heading.
-- each markdown block must list up to 7 numbered events.
-- each event should include a factual description and one clickable markdown source link.
-- Do not output the final digest yet.`;
-}
-
-function buildDigestSynthesisPrompt({
-  originalPrompt,
-  evidence,
-}: {
-  originalPrompt: string;
-  evidence: EvidenceBundle;
-}) {
-  return `${originalPrompt}
-
-Use the following evidence bundle as the only source material for this digest.
-Do not use web search in this step. Do not add sources outside the evidence.
-
-Evidence bundle:
-${JSON.stringify(evidence, null, 2)}
-
-Return exactly one JSON object for the final digest.
 Required fields: title, intro, readingTime, topics.
 - intro is optional.
 - topics must be an array with fields: topic, markdown.
 - Keep topics between 1 and 3.
-- markdown format rules:
-  - Do NOT use section headings like "### Top Events" or "### Summary"
-  - List 3-7 numbered events
-  - Each event: bold title (include key data/numbers in title), 1-3 sentences blending facts and analysis into natural prose, one source link in parentheses at end of paragraph
-  - Use parentheses matching the language: ([Source](url)) for English, （[来源](url)）for Chinese
-  - When an event involves structured comparative data (multiple items needing rows/columns), you may add a markdown table right after the prose paragraph
-  - Do not use a table if the data fits in a single sentence
-  - End with a blockquote (>) containing 1-2 sentences of overall trend assessment — no fixed prefix required`;
+${TOPIC_MARKDOWN_FORMAT}`;
 }
 
 function normalizeGeminiDigest(raw: unknown): DigestResponse {
@@ -217,10 +182,6 @@ function normalizeGeminiDigest(raw: unknown): DigestResponse {
   };
 }
 
-function normalizeGeminiEvidenceBundle(raw: unknown): EvidenceBundle {
-  return evidenceBundleSchema.parse(raw);
-}
-
 function resolveProviderName(provider = process.env.LLM_PROVIDER): ProviderName {
   return provider?.toLowerCase() === "gemini" ? "gemini" : "openai";
 }
@@ -252,9 +213,11 @@ export function createOpenAIDigestProvider({
         throw new Error("LLM_API_KEY is not configured.");
       }
 
+      const fullPrompt = `${prompt}\n## Output\nReturn structured JSON only.\n${TOPIC_MARKDOWN_FORMAT}`;
+
       const response = await responsesClient.responses.parse({
         model,
-        input: prompt,
+        input: fullPrompt,
         tools: [
           {
             type: "web_search_preview",
@@ -294,36 +257,14 @@ export function createGeminiDigestProvider({
         throw new Error("GEMINI_API_KEY or LLM_API_KEY is not configured.");
       }
 
-      const evidenceResponse = await geminiClient.models.generateContent({
-        model,
-        contents: buildEvidencePrompt(prompt),
-        config: {
-          tools: [{ googleSearch: {} }],
-        },
-      });
-
-      const evidenceText = evidenceResponse.text?.trim();
-
-      if (!evidenceText) {
-        throw new Error("Gemini did not return any evidence output.");
-      }
-
-      let evidence: EvidenceBundle;
-
-      try {
-        evidence = normalizeGeminiEvidenceBundle(
-          JSON.parse(extractGeminiJsonCandidate(evidenceText)),
-        );
-      } catch {
-        throw new Error("Gemini did not return valid JSON evidence output.");
-      }
-
       const digestResponse = await geminiClient.models.generateContent({
         model,
-        contents: buildDigestSynthesisPrompt({
-          originalPrompt: prompt,
-          evidence,
-        }),
+        contents: buildGeminiDigestPrompt(prompt),
+        config: {
+          tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json",
+          responseJsonSchema: z.toJSONSchema(digestResponseSchema),
+        },
       });
 
       const digestText = digestResponse.text?.trim();

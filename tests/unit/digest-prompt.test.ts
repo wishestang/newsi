@@ -30,9 +30,10 @@ describe("buildDigestPrompt", () => {
       interestText: "AI agents",
     });
 
-    expect(prompt).toContain("Do NOT use section headings");
-    expect(prompt).toContain("3-7 numbered events");
-    expect(prompt).toContain("blockquote");
+    expect(prompt).toContain('Include a "### Top Events" heading');
+    expect(prompt).toContain("List up to 7 numbered events");
+    expect(prompt).toContain('one separate line starting with "Insight:"');
+    expect(prompt).toContain('End with a "### Summary" heading');
     expect(prompt).not.toContain("summary, keyPoints, and whyItMatters");
   });
 });
