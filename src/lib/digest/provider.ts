@@ -144,10 +144,12 @@ Return exactly one JSON object for an evidence bundle.
 Requirements:
 - Use Google Search grounding to find the most relevant recent signals.
 - Output only valid JSON. Do not wrap in markdown fences.
-- Required top-level fields: generatedAt, topics.
-- topics must be an array with fields: topic, searchQueries, events.
-- Each event must include: title, summary, sourceTitle, sourceUrl, publishedAt (optional).
-- Group events by topic rather than returning one flat list.
+- Required top-level field: topics.
+- topics must be an array of 1 to 3 items.
+- each topic must contain: topic and markdown.
+- each markdown block must contain a "### Signals" heading.
+- each markdown block must list up to 7 numbered events.
+- each event should include a factual description and one clickable markdown source link.
 - Do not output the final digest yet.`;
 }
 

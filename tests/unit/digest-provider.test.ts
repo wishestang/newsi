@@ -168,6 +168,24 @@ describe("digest provider", () => {
         }),
       }),
     );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).toContain(
+      'each topic must contain: topic and markdown',
+    );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).toContain(
+      "### Signals",
+    );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
+      "generatedAt",
+    );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
+      "searchQueries",
+    );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
+      "topics must be an array with fields: topic, searchQueries, events",
+    );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
+      "Each event must include: title, summary, sourceTitle, sourceUrl, publishedAt (optional).",
+    );
     expect(googleGenAIMock.generateContent.mock.calls[1][0]).toEqual(
       expect.objectContaining({
         contents: expect.stringContaining('"topics"'),
