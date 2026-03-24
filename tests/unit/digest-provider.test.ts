@@ -44,16 +44,11 @@ function buildTopic(index: number) {
   return {
     topic: `Topic ${index}`,
     markdown: [
-      "### Top Events",
+      `1. **Event ${index}，关键数据上涨 ${index}0%**`,
+      `   Event ${index} moved in the last 24 hours, reflecting broader trends in the space.`,
+      `   （[来源 ${index}](https://example.com/${index})）`,
       "",
-      `1. **Event ${index}**`,
-      `   Event ${index} moved in the last 24 hours.`,
-      `   Insight: Insight ${index}`,
-      `   [来源：Example ${index} · 2026-03-24](https://example.com/${index})`,
-      "",
-      "### Summary",
-      "",
-      `Takeaway ${index}`,
+      `> Takeaway ${index}`,
     ].join("\n"),
   };
 }
@@ -220,7 +215,7 @@ describe("digest provider", () => {
       text: '```json\n{"topics":[{"topic":"AI coding","markdown":"### Signals\\n\\n1. **OpenAI shipped a new coding model**\\n   A new release landed today.\\n   [来源：OpenAI · 2026-03-24](https://example.com/openai)"}]}\n```',
     };
     const stageTwoResponse = {
-      text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","topics":[{"topic":"AI coding","markdown":"### Top Events\\n\\n1. **OpenAI shipped a new coding model**\\n   A new release landed today.\\n   Insight: AI coding 正在继续快速迭代。\\n   [来源：OpenAI · 2026-03-24](https://example.com/openai)\\n\\n### Summary\\n\\nAI coding 仍是今天最相关的主题。"}]}\n```',
+      text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","topics":[{"topic":"AI coding","markdown":"1. **OpenAI 发布了新的编程模型**\\n   新版本今天正式上线，迭代速度加快。（[OpenAI · 2026-03-24](https://example.com/openai)）\\n\\n> AI coding 仍是今天最相关的主题。"}]}\n```',
     };
 
     const client = {
@@ -245,7 +240,7 @@ describe("digest provider", () => {
       topics: [
         {
           topic: "AI coding",
-          markdown: expect.stringContaining("### Summary"),
+          markdown: expect.stringContaining("> "),
         },
       ],
     });
@@ -289,6 +284,48 @@ describe("digest provider", () => {
     await expect(provider.generate({ prompt: "test" })).rejects.toThrow(
       "Gemini did not return valid JSON digest output.",
     );
+  });
+
+  it("synthesis prompt uses new markdown format instructions", async () => {
+    process.env.LLM_PROVIDER = "gemini";
+    process.env.GEMINI_API_KEY = "gemini-key";
+
+    googleGenAIMock.generateContent.mockResolvedValueOnce({
+      text: JSON.stringify({
+        topics: [
+          {
+            topic: "AI coding",
+            markdown:
+              "### Signals\n\n1. **Signal**\n   A new release.\n   [来源：Source · 2026-03-24](https://example.com/source)",
+          },
+        ],
+      }),
+    });
+    googleGenAIMock.generateContent.mockResolvedValueOnce({
+      text: JSON.stringify({
+        title: "Daily Digest",
+        topics: [
+          {
+            topic: "AI coding",
+            markdown:
+              "1. **Signal**\n   A new release landed today.\n   （[Source](https://example.com/source)）\n\n> AI coding keeps iterating.",
+          },
+        ],
+      }),
+    });
+
+    const { createDigestProvider } = await import("@/lib/digest/provider");
+    const provider = createDigestProvider();
+    await provider.generate({ prompt: "test" });
+
+    const synthesisPrompt =
+      googleGenAIMock.generateContent.mock.calls[1][0]?.contents;
+    expect(synthesisPrompt).toContain("Do NOT use section headings");
+    expect(synthesisPrompt).toContain("3-7 numbered events");
+    expect(synthesisPrompt).toContain("blockquote");
+    expect(synthesisPrompt).not.toContain('"### Top Events" heading');
+    expect(synthesisPrompt).not.toContain('"Insight:" line');
+    expect(synthesisPrompt).not.toContain('"### Summary" heading');
   });
 
   it("throws a configuration error when no API key is available", async () => {

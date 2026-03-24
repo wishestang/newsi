@@ -173,12 +173,14 @@ Required fields: title, intro, readingTime, topics.
 - intro is optional.
 - topics must be an array with fields: topic, markdown.
 - Keep topics between 1 and 3.
-- markdown must contain:
-  - a "### Top Events" heading
-  - up to 7 numbered events
-  - each event must include a factual description, an "Insight:" line, and one clickable markdown source link
-  - a "### Summary" heading followed by a short summary paragraph
-- do not use extra sections outside "Top Events" and "Summary".`;
+- markdown format rules:
+  - Do NOT use section headings like "### Top Events" or "### Summary"
+  - List 3-7 numbered events
+  - Each event: bold title (include key data/numbers in title), 1-3 sentences blending facts and analysis into natural prose, one source link in parentheses at end of paragraph
+  - Use parentheses matching the language: ([Source](url)) for English, （[来源](url)）for Chinese
+  - When an event involves structured comparative data (multiple items needing rows/columns), you may add a markdown table right after the prose paragraph
+  - Do not use a table if the data fits in a single sentence
+  - End with a blockquote (>) containing 1-2 sentences of overall trend assessment — no fixed prefix required`;
 }
 
 function normalizeGeminiDigest(raw: unknown): DigestResponse {
