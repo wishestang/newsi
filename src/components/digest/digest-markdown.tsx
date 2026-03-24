@@ -47,6 +47,11 @@ export function DigestMarkdown({ content }: { content: string }) {
         a: ({ children, href }) => (
           <SafeLink href={href}>{children}</SafeLink>
         ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-2 border-[var(--border-solid)] pl-4 text-[var(--text-muted)]">
+            {children}
+          </blockquote>
+        ),
         table: ({ children }) => (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">

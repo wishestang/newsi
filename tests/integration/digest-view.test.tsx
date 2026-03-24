@@ -101,6 +101,17 @@ describe("DigestView", () => {
     expect(screen.getByText("link")).toBeInTheDocument();
   });
 
+  it("renders closing assessment in a styled blockquote", () => {
+    render(<DigestView {...defaultProps} />);
+
+    const blockquote = document.querySelector("blockquote");
+    expect(blockquote).toBeInTheDocument();
+    expect(blockquote).toHaveClass("border-l-2");
+    expect(blockquote?.textContent).toContain(
+      "Execution layers are becoming productized.",
+    );
+  });
+
   it("renders the end-of-digest footer", () => {
     render(<DigestView {...defaultProps} />);
 
