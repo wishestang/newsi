@@ -50,18 +50,9 @@ const openAIDigestResponseSchema = z.object({
     .array(
       z.object({
         topic: z.string().min(1),
-        events: z
-          .array(
-            z.object({
-              title: z.string().min(1),
-              summary: z.string().min(1),
-              keyFacts: z.array(z.string().min(1)).min(1).max(6),
-            }),
-          )
-          .min(1)
-          .max(5),
-        insights: z.array(z.string().min(1)).min(1).max(3),
-        takeaway: z.string().min(1),
+        eventsMarkdown: z.string().min(1),
+        insightsMarkdown: z.string().min(1),
+        takeawayMarkdown: z.string().min(1),
       }),
     )
     .min(1)
@@ -75,7 +66,7 @@ export function parseDigestResult(raw: unknown): DigestResponse {
   return digestResponseSchema.parse(raw);
 }
 
-function finalizeDigest(raw: z.infer<typeof openAIDigestResponseSchema>): DigestResponse {
+function finalizeDigest(raw: DigestResponse): DigestResponse {
   return parseDigestResult(raw);
 }
 
@@ -129,25 +120,21 @@ function extractGeminiJsonCandidate(responseText: string) {
 }
 
 function estimateReadingTimeFromDigest(input: {
-  intro: string;
+  intro?: string;
   topics: Array<{
     topic: string;
-    events: Array<{
-      title: string;
-      summary: string;
-      keyFacts: string[];
-    }>;
-    insights: string[];
-    takeaway: string;
+    eventsMarkdown: string;
+    insightsMarkdown: string;
+    takeawayMarkdown: string;
   }>;
 }) {
   const text = [
-    input.intro,
+    input.intro ?? "",
     ...input.topics.flatMap((topic) => [
       topic.topic,
-      ...topic.events.flatMap((event) => [event.title, event.summary, ...event.keyFacts]),
-      ...topic.insights,
-      topic.takeaway,
+      topic.eventsMarkdown,
+      topic.insightsMarkdown,
+      topic.takeawayMarkdown,
     ]),
   ].join(" ");
 
@@ -187,17 +174,18 @@ ${JSON.stringify(evidence, null, 2)}
 
 Return exactly one JSON object for the final digest.
 Required fields: title, intro, readingTime, topics.
-- topics must be an array with fields: topic, events, insights, takeaway.
-- events must contain: title, summary, keyFacts.
+- intro is optional.
+- topics must be an array with fields: topic, eventsMarkdown, insightsMarkdown, takeawayMarkdown.
 - Keep topics between 1 and 3.
-- Keep events per topic between 1 and 5.
-- Keep insights per topic between 1 and 3.`;
+- eventsMarkdown should use markdown bullets for the top events in that topic.
+- insightsMarkdown should use markdown bullets for 1 to 3 insights.
+- takeawayMarkdown should be a short markdown paragraph or bullet.`;
 }
 
-function normalizeGeminiDigest(raw: unknown): z.infer<typeof openAIDigestResponseSchema> {
+function normalizeGeminiDigest(raw: unknown): DigestResponse {
   const record = z.record(z.string(), z.unknown()).parse(raw);
   const title = z.string().min(1).parse(record.title);
-  const intro = z.string().min(1).parse(record.intro ?? record.introduction);
+  const intro = record.intro ?? record.introduction;
   const rawTopics = z
     .array(z.record(z.string(), z.unknown()))
     .min(1)
@@ -206,28 +194,25 @@ function normalizeGeminiDigest(raw: unknown): z.infer<typeof openAIDigestRespons
 
   const topics = rawTopics.map((topic) => ({
     topic: z.string().min(1).parse(topic.topic),
-    events: z
-      .array(z.record(z.string(), z.unknown()))
-      .min(1)
-      .max(5)
-      .parse(topic.events)
-      .map((event) => ({
-        title: z.string().min(1).parse(event.title),
-        summary: z.string().min(1).parse(event.summary),
-        keyFacts: z.array(z.string().min(1)).min(1).max(6).parse(event.keyFacts),
-      })),
-    insights: z.array(z.string().min(1)).min(1).max(3).parse(topic.insights),
-    takeaway: z.string().min(1).parse(topic.takeaway),
+    eventsMarkdown: z.string().min(1).parse(topic.eventsMarkdown),
+    insightsMarkdown: z.string().min(1).parse(topic.insightsMarkdown),
+    takeawayMarkdown: z.string().min(1).parse(topic.takeawayMarkdown),
   }));
 
   const readingTime =
     typeof record.readingTime === "number"
       ? z.number().int().min(3).max(20).parse(record.readingTime)
-      : estimateReadingTimeFromDigest({ intro, topics });
+      : estimateReadingTimeFromDigest({
+          intro: typeof intro === "string" && intro.length > 0 ? intro : undefined,
+          topics,
+        });
 
   return {
     title,
-    intro,
+    intro:
+      typeof intro === "string" && intro.length > 0
+        ? z.string().min(1).parse(intro)
+        : undefined,
     readingTime,
     topics,
   };
@@ -348,7 +333,7 @@ export function createGeminiDigestProvider({
         throw new Error("Gemini did not return any digest output.");
       }
 
-      let parsed: z.infer<typeof openAIDigestResponseSchema>;
+      let parsed: DigestResponse;
 
       try {
         parsed = normalizeGeminiDigest(

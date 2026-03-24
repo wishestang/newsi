@@ -112,15 +112,13 @@ describe("PreviewPage", () => {
         topics: [
           {
             topic: "AI Agents",
-            events: [
-              {
-                title: "A new agent IDE launched",
-                summary: "The IDE targets multi-agent workflows.",
-                keyFacts: ["Launched today", "Targets enterprise teams"],
-              },
-            ],
-            insights: ["Tooling is packaging orchestration into products."],
-            takeaway: "Execution layers are becoming productized.",
+            eventsMarkdown: [
+              "- **A new agent IDE launched**",
+              "- The IDE targets multi-agent workflows.",
+              "- Launched today and targets enterprise teams.",
+            ].join("\n"),
+            insightsMarkdown: "- Tooling is packaging orchestration into products.",
+            takeawayMarkdown: "Execution layers are becoming productized.",
           },
         ],
       },

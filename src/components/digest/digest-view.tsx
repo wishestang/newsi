@@ -1,29 +1,12 @@
 import Image from "next/image";
 import { DigestMarkdown } from "@/components/digest/digest-markdown";
 
-type DigestEvent = {
-  title: string;
-  summary: string;
-  keyFacts: string[];
-};
-
 type DigestTopic = {
   topic: string;
-  events: DigestEvent[];
-  insights: string[];
-  takeaway: string;
+  eventsMarkdown: string;
+  insightsMarkdown: string;
+  takeawayMarkdown: string;
 };
-
-function BulletPoint({ text }: { text: string }) {
-  return (
-    <div className="relative pl-[42px]">
-      <div className="absolute left-[24px] top-[8px] size-[6px] bg-accent" />
-      <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
-        <DigestMarkdown content={text} />
-      </div>
-    </div>
-  );
-}
 
 export function DigestView({
   title,
@@ -31,7 +14,7 @@ export function DigestView({
   topics,
 }: {
   title: string;
-  intro: string;
+  intro?: string;
   digestDate: string;
   topics: DigestTopic[];
 }) {
@@ -65,22 +48,8 @@ export function DigestView({
                 <h3 className="font-mono text-[11px] font-bold uppercase leading-[16.5px] tracking-[2.2px] text-text-muted">
                   Top Events
                 </h3>
-                <div className="flex flex-col gap-6">
-                  {topic.events.map((event) => (
-                    <div key={event.title} className="flex flex-col gap-4">
-                      <h4 className="font-heading text-[20px] font-bold leading-[28px] tracking-[-0.2px] text-foreground">
-                        <DigestMarkdown content={event.title} />
-                      </h4>
-                      <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
-                        <DigestMarkdown content={event.summary} />
-                      </div>
-                      <div className="flex flex-col gap-3 border-t border-[var(--border-list)] pt-[17.61px]">
-                        {event.keyFacts.map((fact) => (
-                          <BulletPoint key={fact} text={fact} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
+                  <DigestMarkdown content={topic.eventsMarkdown} />
                 </div>
               </div>
 
@@ -88,10 +57,8 @@ export function DigestView({
                 <h3 className="font-mono text-[11px] font-bold uppercase leading-[16.5px] tracking-[2.2px] text-text-muted">
                   Insights
                 </h3>
-                <div className="flex flex-col gap-3">
-                  {topic.insights.map((insight) => (
-                    <BulletPoint key={insight} text={insight} />
-                  ))}
+                <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
+                  <DigestMarkdown content={topic.insightsMarkdown} />
                 </div>
               </div>
 
@@ -100,7 +67,7 @@ export function DigestView({
                   Takeaway
                 </h3>
                 <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
-                  <DigestMarkdown content={topic.takeaway} />
+                  <DigestMarkdown content={topic.takeawayMarkdown} />
                 </div>
               </div>
             </div>

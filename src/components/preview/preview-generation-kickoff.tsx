@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const kickedOffGenerationTokens = new Set<string>();
+const previewGenerationRequests = new Map<string, Promise<boolean>>();
 
 export function PreviewGenerationKickoff({
   generationToken,
@@ -11,41 +11,49 @@ export function PreviewGenerationKickoff({
   generationToken: string;
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
 
   useEffect(() => {
-    if (kickedOffGenerationTokens.has(generationToken)) {
-      return;
-    }
+    let request = previewGenerationRequests.get(generationToken);
 
-    kickedOffGenerationTokens.add(generationToken);
-    let cancelled = false;
+    if (!request) {
+      request = fetch("/api/preview/generate", {
+        method: "POST",
+      })
+        .then((response) => {
+          if (!response.ok) {
+            previewGenerationRequests.delete(generationToken);
+            return false;
+          }
 
-    async function run() {
-      try {
-        const response = await fetch("/api/preview/generate", {
-          method: "POST",
+          return true;
+        })
+        .catch(() => {
+          previewGenerationRequests.delete(generationToken);
+          return false;
         });
 
-        if (!response.ok) {
-          kickedOffGenerationTokens.delete(generationToken);
-          return;
-        }
-
-        if (!cancelled) {
-          startTransition(() => {
-            router.refresh();
-          });
-        }
-      } catch {
-        kickedOffGenerationTokens.delete(generationToken);
-      }
+      previewGenerationRequests.set(generationToken, request);
     }
 
-    void run();
+    let cancelled = false;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    void request.then((ok) => {
+      if (cancelled || !ok) {
+        return;
+      }
+
+      router.refresh();
+      pollInterval = setInterval(() => {
+        router.refresh();
+      }, 1000);
+    });
 
     return () => {
       cancelled = true;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
     };
   }, [generationToken, router]);
 

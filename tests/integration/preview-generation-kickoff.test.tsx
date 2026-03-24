@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { render, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const refreshMock = vi.fn();
 
@@ -11,13 +11,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("PreviewGenerationKickoff", () => {
-  beforeEach(() => {
-    refreshMock.mockReset();
-  });
-
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.resetModules();
+    vi.restoreAllMocks();
+    refreshMock.mockReset();
   });
 
   it("only kicks off one preview generation request for the same token under StrictMode", async () => {
@@ -44,6 +42,9 @@ describe("PreviewGenerationKickoff", () => {
     });
     expect(fetchMock).toHaveBeenCalledWith("/api/preview/generate", {
       method: "POST",
+    });
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalled();
     });
   });
 });

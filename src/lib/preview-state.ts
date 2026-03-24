@@ -217,22 +217,17 @@ function buildPreviewDigest(interestText: string): DigestResponse {
     readingTime: 5,
     topics: focusAreas.map((focusArea, index) => ({
       topic: focusArea,
-      events: [
-        {
-          title: `${focusArea} surfaced as a top tracked event`,
-          summary:
-            `Signals around ${focusArea.toLowerCase()} are the most relevant part of this brief right now, so the preview keeps the summary centered on what changed in the last cycle.`,
-          keyFacts: [
-            `${focusArea} remains a first-class topic in the daily synthesis.`,
-            "The preview keeps event summaries concise and fact-led.",
-          ],
-        },
-      ],
-      insights: [
+      eventsMarkdown: [
+        `- **${focusArea} surfaced as a top tracked event.**`,
+        `- Signals around ${focusArea.toLowerCase()} are the most relevant part of this brief right now, so the preview keeps the summary centered on what changed in the last cycle.`,
+        `- ${focusArea} remains a first-class topic in the daily synthesis.`,
+        "- The preview keeps event summaries concise and fact-led.",
+      ].join("\n"),
+      insightsMarkdown: [
         "The digest favors concise editorial synthesis over feed-style aggregation.",
         "Each topic separates what happened from what it means.",
-      ],
-      takeaway:
+      ].map((line) => `- ${line}`).join("\n"),
+      takeawayMarkdown:
         index === 0
           ? "This mock digest exists to simulate the final reading surface before live provider output is configured."
           : `${focusArea} would continue to receive a dedicated facts-and-insights block in the live product.`,

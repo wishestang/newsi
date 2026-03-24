@@ -43,15 +43,9 @@ vi.mock("@google/genai", () => ({
 function buildTopic(index: number) {
   return {
     topic: `Topic ${index}`,
-    events: [
-      {
-        title: `Event ${index}`,
-        summary: `Event ${index} moved in the last 24 hours.`,
-        keyFacts: ["Fact one", "Fact two"],
-      },
-    ],
-    insights: [`Insight ${index}`],
-    takeaway: `Takeaway ${index}`,
+    eventsMarkdown: `- **Event ${index}:** Event ${index} moved in the last 24 hours.`,
+    insightsMarkdown: `- Insight ${index}`,
+    takeawayMarkdown: `Takeaway ${index}`,
   };
 }
 
@@ -202,7 +196,7 @@ describe("digest provider", () => {
       text: '```json\n{"generatedAt":"2026-03-24T08:00:00.000Z","topics":[{"topic":"AI coding","searchQueries":["AI coding tools last 24 hours"],"events":[{"title":"OpenAI shipped a new coding model","summary":"A new release landed today.","sourceTitle":"OpenAI","sourceUrl":"https://example.com/openai","publishedAt":"2026-03-24T06:00:00Z"}]}]}\n```',
     };
     const stageTwoResponse = {
-      text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","topics":[{"topic":"AI coding","events":[{"title":"OpenAI shipped a new coding model","summary":"A new release landed today.","keyFacts":["发布于 3 月 24 日","面向 coding 工作流"]}],"insights":["AI coding 正在继续快速迭代。"],"takeaway":"AI coding 仍是今天最相关的主题。"}]}\n```',
+      text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","topics":[{"topic":"AI coding","eventsMarkdown":"- **OpenAI shipped a new coding model**\\n- 发布于 3 月 24 日，面向 coding 工作流","insightsMarkdown":"- AI coding 正在继续快速迭代。","takeawayMarkdown":"AI coding 仍是今天最相关的主题。"}]}\n```',
     };
 
     const client = {
@@ -224,7 +218,12 @@ describe("digest provider", () => {
     await expect(provider.generate({ prompt: "test" })).resolves.toMatchObject({
       title: "每日情报摘要",
       intro: "今天最值得关注的是 AI coding 的新发布。",
-      topics: [{ topic: "AI coding", takeaway: "AI coding 仍是今天最相关的主题。" }],
+      topics: [
+        {
+          topic: "AI coding",
+          takeawayMarkdown: "AI coding 仍是今天最相关的主题。",
+        },
+      ],
     });
     expect(client.models.generateContent).toHaveBeenCalledTimes(2);
   });

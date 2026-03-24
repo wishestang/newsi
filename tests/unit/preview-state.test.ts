@@ -61,13 +61,9 @@ describe("preview state", () => {
           topics: expect.arrayContaining([
             expect.objectContaining({
               topic: "AI agents",
-              events: expect.arrayContaining([
-                expect.objectContaining({
-                  title: expect.any(String),
-                }),
-              ]),
-              insights: expect.any(Array),
-              takeaway: expect.any(String),
+              eventsMarkdown: expect.any(String),
+              insightsMarkdown: expect.any(String),
+              takeawayMarkdown: expect.any(String),
             }),
           ]),
         },
@@ -115,21 +111,21 @@ describe("preview state", () => {
             topics: [
               {
                 topic: "A",
-                events: [{ title: "A1", summary: "a", keyFacts: ["c", "d"] }],
-                insights: ["A insight"],
-                takeaway: "A takeaway",
+                eventsMarkdown: "- A1\na",
+                insightsMarkdown: "- A insight",
+                takeawayMarkdown: "A takeaway",
               },
               {
                 topic: "B",
-                events: [{ title: "B1", summary: "a", keyFacts: ["c", "d"] }],
-                insights: ["B insight"],
-                takeaway: "B takeaway",
+                eventsMarkdown: "- B1\na",
+                insightsMarkdown: "- B insight",
+                takeawayMarkdown: "B takeaway",
               },
               {
                 topic: "C",
-                events: [{ title: "C1", summary: "a", keyFacts: ["c", "d"] }],
-                insights: ["C insight"],
-                takeaway: "C takeaway",
+                eventsMarkdown: "- C1\na",
+                insightsMarkdown: "- C insight",
+                takeawayMarkdown: "C takeaway",
               },
             ],
           },

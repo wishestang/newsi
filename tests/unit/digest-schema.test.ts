@@ -4,20 +4,16 @@ import { digestResponseSchema } from "@/lib/digest/schema";
 function buildTopic(index: number) {
   return {
     topic: `Topic ${index}`,
-    events: [
-      {
-        title: `Event ${index}`,
-        summary: "A concise event summary.",
-        keyFacts: ["Fact one", "Fact two", "Fact three"],
-      },
-      {
-        title: `Event ${index}b`,
-        summary: "Another concise event summary.",
-        keyFacts: ["Fact four", "Fact five"],
-      },
-    ],
-    insights: ["Insight one", "Insight two", "Insight three"],
-    takeaway: "Why this topic matters today.",
+    eventsMarkdown: [
+      `- **Event ${index}:** A concise event summary.`,
+      `- **Event ${index}b:** Another concise event summary.`,
+    ].join("\n"),
+    insightsMarkdown: [
+      "- Insight one",
+      "- Insight two",
+      "- Insight three",
+    ].join("\n"),
+    takeawayMarkdown: "Why this topic matters today.",
   };
 }
 
@@ -36,7 +32,6 @@ describe("digestResponseSchema", () => {
   it("accepts a single high-signal topic", () => {
     const result = digestResponseSchema.safeParse({
       title: "Today's Synthesis",
-      intro: "A short intro",
       readingTime: 5,
       topics: [buildTopic(1)],
     });
@@ -55,31 +50,31 @@ describe("digestResponseSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects topics with no events", () => {
+  it("rejects topics with no top-events markdown", () => {
     const topic = buildTopic(1);
     const result = digestResponseSchema.safeParse({
       title: "Today's Synthesis",
       intro: "A short intro",
       readingTime: 5,
-      topics: [{ ...topic, events: [] }],
+      topics: [{ ...topic, eventsMarkdown: "" }],
     });
 
     expect(result.success).toBe(false);
   });
 
-  it("rejects topics with no insights", () => {
+  it("rejects topics with no insights markdown", () => {
     const topic = buildTopic(1);
     const result = digestResponseSchema.safeParse({
       title: "Today's Synthesis",
       intro: "A short intro",
       readingTime: 5,
-      topics: [{ ...topic, insights: [] }],
+      topics: [{ ...topic, insightsMarkdown: "" }],
     });
 
     expect(result.success).toBe(false);
   });
 
-  it("rejects topics without a takeaway", () => {
+  it("rejects topics without a takeaway markdown block", () => {
     const topic = buildTopic(1);
     const result = digestResponseSchema.safeParse({
       title: "Today's Synthesis",
@@ -88,8 +83,8 @@ describe("digestResponseSchema", () => {
       topics: [
         {
           topic: topic.topic,
-          events: topic.events,
-          insights: topic.insights,
+          eventsMarkdown: topic.eventsMarkdown,
+          insightsMarkdown: topic.insightsMarkdown,
         },
       ],
     });

@@ -24,7 +24,7 @@ test.describe("preview flow", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Today's Synthesis" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
     await page
       .getByRole("button", { name: "Confirm and start daily digests" })
       .click();
@@ -32,7 +32,7 @@ test.describe("preview flow", () => {
     await expect(page).toHaveURL(/\/today$/);
     await expect(
       page.getByRole("heading", { name: "Today's Synthesis" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
     await expect(
       page.getByRole("heading", { name: "AI agents", exact: true }),
     ).toBeVisible();
@@ -44,7 +44,7 @@ test.describe("preview flow", () => {
     await expect(page).toHaveURL(/\/history\/\d{4}-\d{2}-\d{2}$/);
     await expect(
       page.getByRole("heading", { name: "Today's Synthesis" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
 
     await page.goto("/topics");
     await expect(

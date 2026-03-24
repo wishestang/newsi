@@ -10,15 +10,13 @@ describe("DigestView", () => {
     topics: [
       {
         topic: "AI Agents",
-        events: [
-          {
-            title: "A new agent IDE launched",
-            summary: "The IDE targets multi-agent workflows.",
-            keyFacts: ["Launched March 24", "Targets enterprise teams"],
-          },
-        ],
-        insights: ["Tooling is packaging orchestration into products."],
-        takeaway: "Execution layers are becoming productized.",
+        eventsMarkdown: [
+          "- **A new agent IDE launched**",
+          "- The IDE targets multi-agent workflows.",
+          "- Launched March 24 and targets enterprise teams.",
+        ].join("\n"),
+        insightsMarkdown: "- Tooling is packaging orchestration into products.",
+        takeawayMarkdown: "Execution layers are becoming productized.",
       },
     ],
   };
@@ -55,15 +53,13 @@ describe("DigestView", () => {
         topics={[
           {
             topic: "AI Agents",
-            events: [
-              {
-                title: "A **bold** move with [source](https://example.com).",
-                summary: "This topic changed quickly.",
-                keyFacts: ["First point", "Second point"],
-              },
-            ],
-            insights: ["See **why** this matters."],
-            takeaway: "One **clear** takeaway.",
+            eventsMarkdown: [
+              "- A **bold** move with [source](https://example.com).",
+              "- First point",
+              "- Second point",
+            ].join("\n"),
+            insightsMarkdown: "- See **why** this matters.",
+            takeawayMarkdown: "One **clear** takeaway.",
           },
         ]}
       />,
@@ -86,15 +82,13 @@ describe("DigestView", () => {
         topics={[
           {
             topic: "AI Agents",
-            events: [
-              {
-                title: "Unsafe [link](javascript:alert(1))",
-                summary: "Summary text.",
-                keyFacts: ["Point one", "Point two"],
-              },
-            ],
-            insights: ["Insight text."],
-            takeaway: "Takeaway text.",
+            eventsMarkdown: [
+              "- Unsafe [link](javascript:alert(1))",
+              "- Point one",
+              "- Point two",
+            ].join("\n"),
+            insightsMarkdown: "- Insight text.",
+            takeawayMarkdown: "Takeaway text.",
           },
         ]}
       />,
