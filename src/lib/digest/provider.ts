@@ -50,9 +50,7 @@ const openAIDigestResponseSchema = z.object({
     .array(
       z.object({
         topic: z.string().min(1),
-        eventsMarkdown: z.string().min(1),
-        insightsMarkdown: z.string().min(1),
-        takeawayMarkdown: z.string().min(1),
+        markdown: z.string().min(1),
       }),
     )
     .min(1)
@@ -123,18 +121,14 @@ function estimateReadingTimeFromDigest(input: {
   intro?: string;
   topics: Array<{
     topic: string;
-    eventsMarkdown: string;
-    insightsMarkdown: string;
-    takeawayMarkdown: string;
+    markdown: string;
   }>;
 }) {
   const text = [
     input.intro ?? "",
     ...input.topics.flatMap((topic) => [
       topic.topic,
-      topic.eventsMarkdown,
-      topic.insightsMarkdown,
-      topic.takeawayMarkdown,
+      topic.markdown,
     ]),
   ].join(" ");
 
@@ -175,11 +169,14 @@ ${JSON.stringify(evidence, null, 2)}
 Return exactly one JSON object for the final digest.
 Required fields: title, intro, readingTime, topics.
 - intro is optional.
-- topics must be an array with fields: topic, eventsMarkdown, insightsMarkdown, takeawayMarkdown.
+- topics must be an array with fields: topic, markdown.
 - Keep topics between 1 and 3.
-- eventsMarkdown should use markdown bullets for the top events in that topic.
-- insightsMarkdown should use markdown bullets for 1 to 3 insights.
-- takeawayMarkdown should be a short markdown paragraph or bullet.`;
+- markdown must contain:
+  - a "### Top Events" heading
+  - up to 7 numbered events
+  - each event must include a factual description, an "Insight:" line, and one clickable markdown source link
+  - a "### Summary" heading followed by a short summary paragraph
+- do not use extra sections outside "Top Events" and "Summary".`;
 }
 
 function normalizeGeminiDigest(raw: unknown): DigestResponse {
@@ -194,9 +191,7 @@ function normalizeGeminiDigest(raw: unknown): DigestResponse {
 
   const topics = rawTopics.map((topic) => ({
     topic: z.string().min(1).parse(topic.topic),
-    eventsMarkdown: z.string().min(1).parse(topic.eventsMarkdown),
-    insightsMarkdown: z.string().min(1).parse(topic.insightsMarkdown),
-    takeawayMarkdown: z.string().min(1).parse(topic.takeawayMarkdown),
+    markdown: z.string().min(1).parse(topic.markdown),
   }));
 
   const readingTime =

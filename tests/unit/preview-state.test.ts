@@ -61,9 +61,7 @@ describe("preview state", () => {
           topics: expect.arrayContaining([
             expect.objectContaining({
               topic: "AI agents",
-              eventsMarkdown: expect.any(String),
-              insightsMarkdown: expect.any(String),
-              takeawayMarkdown: expect.any(String),
+              markdown: expect.any(String),
             }),
           ]),
         },
@@ -111,21 +109,15 @@ describe("preview state", () => {
             topics: [
               {
                 topic: "A",
-                eventsMarkdown: "- A1\na",
-                insightsMarkdown: "- A insight",
-                takeawayMarkdown: "A takeaway",
+                markdown: "### Top Events\n\n1. **A1**\n   a\n   Insight: A insight\n   [来源：Example · 2026-03-24](https://example.com/a1)\n\n### Summary\n\nA takeaway",
               },
               {
                 topic: "B",
-                eventsMarkdown: "- B1\na",
-                insightsMarkdown: "- B insight",
-                takeawayMarkdown: "B takeaway",
+                markdown: "### Top Events\n\n1. **B1**\n   a\n   Insight: B insight\n   [来源：Example · 2026-03-24](https://example.com/b1)\n\n### Summary\n\nB takeaway",
               },
               {
                 topic: "C",
-                eventsMarkdown: "- C1\na",
-                insightsMarkdown: "- C insight",
-                takeawayMarkdown: "C takeaway",
+                markdown: "### Top Events\n\n1. **C1**\n   a\n   Insight: C insight\n   [来源：Example · 2026-03-24](https://example.com/c1)\n\n### Summary\n\nC takeaway",
               },
             ],
           },

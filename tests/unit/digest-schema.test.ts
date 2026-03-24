@@ -4,16 +4,18 @@ import { digestResponseSchema } from "@/lib/digest/schema";
 function buildTopic(index: number) {
   return {
     topic: `Topic ${index}`,
-    eventsMarkdown: [
-      `- **Event ${index}:** A concise event summary.`,
-      `- **Event ${index}b:** Another concise event summary.`,
+    markdown: [
+      "### Top Events",
+      "",
+      `1. **Event ${index}**`,
+      "   A concise event summary.",
+      "   Insight: This is why it matters.",
+      `   [来源：Example ${index} · 2026-03-24](https://example.com/${index})`,
+      "",
+      "### Summary",
+      "",
+      "Why this topic matters today.",
     ].join("\n"),
-    insightsMarkdown: [
-      "- Insight one",
-      "- Insight two",
-      "- Insight three",
-    ].join("\n"),
-    takeawayMarkdown: "Why this topic matters today.",
   };
 }
 
@@ -50,31 +52,19 @@ describe("digestResponseSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects topics with no top-events markdown", () => {
+  it("rejects topics with no markdown body", () => {
     const topic = buildTopic(1);
     const result = digestResponseSchema.safeParse({
       title: "Today's Synthesis",
       intro: "A short intro",
       readingTime: 5,
-      topics: [{ ...topic, eventsMarkdown: "" }],
+      topics: [{ ...topic, markdown: "" }],
     });
 
     expect(result.success).toBe(false);
   });
 
-  it("rejects topics with no insights markdown", () => {
-    const topic = buildTopic(1);
-    const result = digestResponseSchema.safeParse({
-      title: "Today's Synthesis",
-      intro: "A short intro",
-      readingTime: 5,
-      topics: [{ ...topic, insightsMarkdown: "" }],
-    });
-
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects topics without a takeaway markdown block", () => {
+  it("rejects topics without a markdown field", () => {
     const topic = buildTopic(1);
     const result = digestResponseSchema.safeParse({
       title: "Today's Synthesis",
@@ -83,8 +73,6 @@ describe("digestResponseSchema", () => {
       topics: [
         {
           topic: topic.topic,
-          eventsMarkdown: topic.eventsMarkdown,
-          insightsMarkdown: topic.insightsMarkdown,
         },
       ],
     });

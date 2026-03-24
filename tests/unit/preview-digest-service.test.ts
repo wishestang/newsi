@@ -51,21 +51,15 @@ describe("preview digest service", () => {
         topics: [
           {
             topic: "AI Agents",
-            eventsMarkdown: "- A1\na",
-            insightsMarkdown: "- AI insight",
-            takeawayMarkdown: "AI takeaway",
+            markdown: "### Top Events\n\n1. **A1**\n   a\n   Insight: AI insight\n   [来源：Example · 2026-03-24](https://example.com/a1)\n\n### Summary\n\nAI takeaway",
           },
           {
             topic: "Design Tools",
-            eventsMarkdown: "- D1\na",
-            insightsMarkdown: "- Design insight",
-            takeawayMarkdown: "Design takeaway",
+            markdown: "### Top Events\n\n1. **D1**\n   a\n   Insight: Design insight\n   [来源：Example · 2026-03-24](https://example.com/d1)\n\n### Summary\n\nDesign takeaway",
           },
           {
             topic: "Indie Builders",
-            eventsMarkdown: "- I1\na",
-            insightsMarkdown: "- Indie insight",
-            takeawayMarkdown: "Indie takeaway",
+            markdown: "### Top Events\n\n1. **I1**\n   a\n   Insight: Indie insight\n   [来源：Example · 2026-03-24](https://example.com/i1)\n\n### Summary\n\nIndie takeaway",
           },
         ],
       }),
@@ -208,21 +202,15 @@ describe("preview digest service", () => {
         topics: [
           {
             topic: "A",
-            eventsMarkdown: "- A1\na",
-            insightsMarkdown: "- A insight",
-            takeawayMarkdown: "A takeaway",
+            markdown: "### Top Events\n\n1. **A1**\n   a\n   Insight: A insight\n   [来源：Example · 2026-03-24](https://example.com/a1)\n\n### Summary\n\nA takeaway",
           },
           {
             topic: "B",
-            eventsMarkdown: "- B1\na",
-            insightsMarkdown: "- B insight",
-            takeawayMarkdown: "B takeaway",
+            markdown: "### Top Events\n\n1. **B1**\n   a\n   Insight: B insight\n   [来源：Example · 2026-03-24](https://example.com/b1)\n\n### Summary\n\nB takeaway",
           },
           {
             topic: "C",
-            eventsMarkdown: "- C1\na",
-            insightsMarkdown: "- C insight",
-            takeawayMarkdown: "C takeaway",
+            markdown: "### Top Events\n\n1. **C1**\n   a\n   Insight: C insight\n   [来源：Example · 2026-03-24](https://example.com/c1)\n\n### Summary\n\nC takeaway",
           },
         ],
       },

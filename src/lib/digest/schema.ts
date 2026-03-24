@@ -2,9 +2,7 @@ import { z } from "zod";
 
 const digestTopicSchema = z.object({
   topic: z.string().min(1),
-  eventsMarkdown: z.string().min(1),
-  insightsMarkdown: z.string().min(1),
-  takeawayMarkdown: z.string().min(1),
+  markdown: z.string().min(1),
 });
 
 export const digestResponseSchema = z.object({

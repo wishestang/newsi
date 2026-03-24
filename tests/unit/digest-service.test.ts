@@ -11,21 +11,15 @@ describe("generateDigest", () => {
         topics: [
           {
             topic: "AI",
-            eventsMarkdown: "- A1\na",
-            insightsMarkdown: "- AI insight",
-            takeawayMarkdown: "AI takeaway",
+            markdown: "### Top Events\n\n1. **A1**\n   a\n   Insight: AI insight\n   [来源：Example · 2026-03-24](https://example.com/a1)\n\n### Summary\n\nAI takeaway",
           },
           {
             topic: "Tools",
-            eventsMarkdown: "- T1\na",
-            insightsMarkdown: "- Tools insight",
-            takeawayMarkdown: "Tools takeaway",
+            markdown: "### Top Events\n\n1. **T1**\n   a\n   Insight: Tools insight\n   [来源：Example · 2026-03-24](https://example.com/t1)\n\n### Summary\n\nTools takeaway",
           },
           {
             topic: "Startups",
-            eventsMarkdown: "- S1\na",
-            insightsMarkdown: "- Startups insight",
-            takeawayMarkdown: "Startups takeaway",
+            markdown: "### Top Events\n\n1. **S1**\n   a\n   Insight: Startups insight\n   [来源：Example · 2026-03-24](https://example.com/s1)\n\n### Summary\n\nStartups takeaway",
           },
         ],
       }),

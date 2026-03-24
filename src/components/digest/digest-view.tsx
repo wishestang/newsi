@@ -3,9 +3,7 @@ import { DigestMarkdown } from "@/components/digest/digest-markdown";
 
 type DigestTopic = {
   topic: string;
-  eventsMarkdown: string;
-  insightsMarkdown: string;
-  takeawayMarkdown: string;
+  markdown: string;
 };
 
 export function DigestView({
@@ -43,33 +41,8 @@ export function DigestView({
               {topic.topic}
             </h2>
 
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-4">
-                <h3 className="font-mono text-[11px] font-bold uppercase leading-[16.5px] tracking-[2.2px] text-text-muted">
-                  Top Events
-                </h3>
-                <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
-                  <DigestMarkdown content={topic.eventsMarkdown} />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <h3 className="font-mono text-[11px] font-bold uppercase leading-[16.5px] tracking-[2.2px] text-text-muted">
-                  Insights
-                </h3>
-                <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
-                  <DigestMarkdown content={topic.insightsMarkdown} />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4 border-t border-[var(--border-list)] pt-[17.61px]">
-                <h3 className="font-mono text-[11px] font-bold uppercase leading-[16.5px] tracking-[2.2px] text-text-muted">
-                  Takeaway
-                </h3>
-                <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
-                  <DigestMarkdown content={topic.takeawayMarkdown} />
-                </div>
-              </div>
+            <div className="font-sans text-[17px] leading-[28.9px] text-[var(--text-body)] [&_strong]:text-foreground">
+              <DigestMarkdown content={topic.markdown} />
             </div>
           </section>
         ))}

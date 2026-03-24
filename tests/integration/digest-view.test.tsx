@@ -10,13 +10,18 @@ describe("DigestView", () => {
     topics: [
       {
         topic: "AI Agents",
-        eventsMarkdown: [
-          "- **A new agent IDE launched**",
-          "- The IDE targets multi-agent workflows.",
-          "- Launched March 24 and targets enterprise teams.",
+        markdown: [
+          "### Top Events",
+          "",
+          "1. **A new agent IDE launched**",
+          "   The IDE targets multi-agent workflows.",
+          "   Insight: Tooling is packaging orchestration into products.",
+          "   [来源：Example · 2026-03-24](https://example.com)",
+          "",
+          "### Summary",
+          "",
+          "Execution layers are becoming productized.",
         ].join("\n"),
-        insightsMarkdown: "- Tooling is packaging orchestration into products.",
-        takeawayMarkdown: "Execution layers are becoming productized.",
       },
     ],
   };
@@ -33,16 +38,17 @@ describe("DigestView", () => {
 
     expect(screen.getByText("AI Agents")).toBeInTheDocument();
     expect(screen.getByText("A new agent IDE launched")).toBeInTheDocument();
-    expect(screen.getByText("The IDE targets multi-agent workflows.")).toBeInTheDocument();
+    expect(screen.getByText(/The IDE targets multi-agent workflows\./)).toBeInTheDocument();
   });
 
-  it("renders top events insights and takeaway sections", () => {
+  it("renders top events and summary headings inside topic markdown", () => {
     render(<DigestView {...defaultProps} />);
 
     expect(screen.getByText("Top Events")).toBeInTheDocument();
-    expect(screen.getByText("Insights")).toBeInTheDocument();
-    expect(screen.getByText("Takeaway")).toBeInTheDocument();
-    expect(screen.getByText("Tooling is packaging orchestration into products.")).toBeInTheDocument();
+    expect(screen.getByText("Summary")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Tooling is packaging orchestration into products\./),
+    ).toBeInTheDocument();
     expect(screen.getByText("Execution layers are becoming productized.")).toBeInTheDocument();
   });
 
@@ -53,24 +59,28 @@ describe("DigestView", () => {
         topics={[
           {
             topic: "AI Agents",
-            eventsMarkdown: [
-              "- A **bold** move with [source](https://example.com).",
-              "- First point",
-              "- Second point",
+            markdown: [
+              "### Top Events",
+              "",
+              "1. **A bold move**",
+              "   This topic changed quickly.",
+              "   Insight: See **why** this matters.",
+              "   [source](https://example.com)",
+              "",
+              "### Summary",
+              "",
+              "One **clear** takeaway.",
             ].join("\n"),
-            insightsMarkdown: "- See **why** this matters.",
-            takeawayMarkdown: "One **clear** takeaway.",
           },
         ]}
       />,
     );
 
-    expect(screen.getByText("bold")).toBeInTheDocument();
+    expect(screen.getByText("A bold move")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "source" })).toHaveAttribute(
       "href",
       "https://example.com",
     );
-    expect(screen.getByText("First point")).toBeInTheDocument();
     expect(screen.getByText("why")).toBeInTheDocument();
     expect(screen.getByText("clear")).toBeInTheDocument();
   });
@@ -82,13 +92,18 @@ describe("DigestView", () => {
         topics={[
           {
             topic: "AI Agents",
-            eventsMarkdown: [
-              "- Unsafe [link](javascript:alert(1))",
-              "- Point one",
-              "- Point two",
+            markdown: [
+              "### Top Events",
+              "",
+              "1. **Unsafe item**",
+              "   Summary text.",
+              "   Insight: Insight text.",
+              "   Unsafe [link](javascript:alert(1))",
+              "",
+              "### Summary",
+              "",
+              "Takeaway text.",
             ].join("\n"),
-            insightsMarkdown: "- Insight text.",
-            takeawayMarkdown: "Takeaway text.",
           },
         ]}
       />,
