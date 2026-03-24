@@ -121,19 +121,16 @@ describe("digest provider", () => {
 
     googleGenAIMock.generateContent.mockResolvedValueOnce({
       text: JSON.stringify({
-        generatedAt: "2026-03-24T08:00:00.000Z",
         topics: [
           {
             topic: "AI agents",
-            searchQueries: ["AI agents design tools latest"],
-            events: [
-              {
-                title: "OpenAI shipped a coding update",
-                summary: "A new model landed today.",
-                sourceTitle: "OpenAI",
-                sourceUrl: "https://example.com/openai",
-              },
-            ],
+            markdown: [
+              "### Signals",
+              "",
+              "1. **OpenAI shipped a coding update**",
+              "   A new model landed today.",
+              "   [来源：OpenAI · 2026-03-24](https://example.com/openai)",
+            ].join("\n"),
           },
         ],
       }),
@@ -202,7 +199,7 @@ describe("digest provider", () => {
 
   it("builds a normalized topic-grouped evidence bundle before Gemini synthesizes the final digest", async () => {
     const stageOneResponse = {
-      text: '```json\n{"generatedAt":"2026-03-24T08:00:00.000Z","topics":[{"topic":"AI coding","searchQueries":["AI coding tools last 24 hours"],"events":[{"title":"OpenAI shipped a new coding model","summary":"A new release landed today.","sourceTitle":"OpenAI","sourceUrl":"https://example.com/openai","publishedAt":"2026-03-24T06:00:00Z"}]}]}\n```',
+      text: '```json\n{"topics":[{"topic":"AI coding","markdown":"### Signals\\n\\n1. **OpenAI shipped a new coding model**\\n   A new release landed today.\\n   [来源：OpenAI · 2026-03-24](https://example.com/openai)"}]}\n```',
     };
     const stageTwoResponse = {
       text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","topics":[{"topic":"AI coding","markdown":"### Top Events\\n\\n1. **OpenAI shipped a new coding model**\\n   A new release landed today.\\n   Insight: AI coding 正在继续快速迭代。\\n   [来源：OpenAI · 2026-03-24](https://example.com/openai)\\n\\n### Summary\\n\\nAI coding 仍是今天最相关的主题。"}]}\n```',
@@ -244,19 +241,16 @@ describe("digest provider", () => {
           .fn()
           .mockResolvedValueOnce({
             text: JSON.stringify({
-              generatedAt: "2026-03-24T08:00:00.000Z",
               topics: [
                 {
                   topic: "AI coding",
-                  searchQueries: ["AI coding"],
-                  events: [
-                    {
-                      title: "Signal",
-                      summary: "A new release landed today.",
-                      sourceTitle: "Source",
-                      sourceUrl: "https://example.com/source",
-                    },
-                  ],
+                  markdown: [
+                    "### Signals",
+                    "",
+                    "1. **Signal**",
+                    "   A new release landed today.",
+                    "   [来源：Source · 2026-03-24](https://example.com/source)",
+                  ].join("\n"),
                 },
               ],
             }),
