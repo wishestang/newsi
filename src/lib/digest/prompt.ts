@@ -31,6 +31,13 @@ Based on the standing brief above, search for the most recent and relevant infor
 Respond in the same language as the standing brief above. If the standing brief is written in Chinese, all output text (title, intro, section titles, summaries, key points, whyItMatters) MUST be in Chinese. Match the user's language exactly.
 
 ## Output
-Return structured JSON only. Use Markdown syntax only inside existing string fields such as summary, keyPoints, and whyItMatters.
+Return structured JSON only.
+The \`markdown\` field in each topic must follow this format:
+- Do NOT use section headings like "### Top Events" or "### Summary"
+- List 3-7 numbered events
+- Each event: bold title (include key data/numbers in title), 1-3 sentences blending facts and analysis, one source link in parentheses at end of paragraph
+- Use parentheses matching the language: ([Source](url)) for English, （[来源](url)）for Chinese
+- When an event involves structured comparative data (multiple items needing rows/columns), you may add a markdown table right after the prose paragraph
+- End with a blockquote (>) containing 1-2 sentences of overall trend assessment
 `;
 }

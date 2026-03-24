@@ -24,14 +24,15 @@ describe("buildDigestPrompt", () => {
     expect(prompt).toContain("Match the user's language exactly");
   });
 
-  it("allows markdown inside existing string fields", () => {
+  it("specifies the new topic markdown format in the output section", () => {
     const prompt = buildDigestPrompt({
       dateLabel: "2026-03-22",
       interestText: "AI agents",
     });
 
-    expect(prompt).toContain("Markdown");
-    expect(prompt).toContain("tables");
-    expect(prompt).toContain("summary, keyPoints, and whyItMatters");
+    expect(prompt).toContain("Do NOT use section headings");
+    expect(prompt).toContain("3-7 numbered events");
+    expect(prompt).toContain("blockquote");
+    expect(prompt).not.toContain("summary, keyPoints, and whyItMatters");
   });
 });
