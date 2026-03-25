@@ -8,6 +8,7 @@ type DigestTopic = {
 
 export function DigestView({
   title,
+  intro,
   digestDate,
   topics,
 }: {
@@ -32,6 +33,13 @@ export function DigestView({
       <h1 className="font-heading text-[40px] font-bold leading-[44px] tracking-[-0.8px] text-foreground">
         {title}
       </h1>
+
+      {/* Intro */}
+      {intro && (
+        <p className="mt-4 font-sans text-[17px] leading-[28.9px] text-[var(--text-muted)]">
+          {intro}
+        </p>
+      )}
 
       {/* Topic blocks */}
       <div className="mt-16 flex flex-col gap-[96px]">

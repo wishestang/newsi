@@ -33,17 +33,54 @@ Respond in the same language as the standing brief above. If the standing brief 
 }
 
 export const TOPIC_MARKDOWN_FORMAT = `
-The \`markdown\` field in each topic must follow this format:
-- Include a "### Top Events" heading
-- List up to 7 numbered events
-- Each event must include:
-  - a bold title
-  - 1-3 sentences of factual description
-  - one separate line starting with "Insight:"
-  - one clickable markdown source link
-- End with a "### Summary" heading followed by a short summary paragraph
-- Do not add any extra headings outside "### Top Events" and "### Summary"
-- Use markdown links for sources`;
+The \`markdown\` field in each topic must follow this exact structure:
+
+1. **Opening paragraph** (1-2 sentences): A concise overview of the day's overall situation in this domain. No heading — just a plain paragraph at the top.
+
+2. **Event blocks** (up to 7): Each event is separated by \`---\` and follows this pattern:
+   - \`#### Event Title\` — use h4 for the event headline
+   - 2-3 sentences of factual description with specific data, names, companies, and figures
+   - A blockquote insight line: \`> **Why it matters:** analysis of causes, impact, and forward-looking implications\`
+   - A source line in italics: \`*Sources: [Reuters](url), [Bloomberg](url)*\`
+
+3. **Closing assessment**: End with a blockquote summary:
+   \`> **Today's takeaway:** One-sentence assessment of the overall direction for this domain today.\`
+
+Example structure:
+\`\`\`
+Opening paragraph summarizing the day's landscape in this area.
+
+---
+
+#### Event Headline
+
+2-3 sentences of factual description with real data and names.
+
+> **Why it matters:** Analysis of why this event is significant and what it means going forward.
+
+*Sources: [Source1](url1), [Source2](url2)*
+
+---
+
+#### Another Event Headline
+
+Description with specific details.
+
+> **Why it matters:** Forward-looking analysis.
+
+*Sources: [Source1](url1)*
+
+---
+
+> **Today's takeaway:** One-sentence overall assessment.
+\`\`\`
+
+Rules:
+- Do NOT use any headings other than \`####\` for events
+- Do NOT use numbered lists for events — each event is its own \`####\` block
+- Separate every event block with \`---\`
+- Use markdown links for all sources
+- The "Why it matters" and "Today's takeaway" labels must match the language of the standing brief (e.g. use "为什么重要：" and "今日总评：" for Chinese)`;
 
 export function buildDigestPrompt({
   dateLabel,

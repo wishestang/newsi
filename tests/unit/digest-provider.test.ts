@@ -154,10 +154,10 @@ describe("digest provider", () => {
       "responseJsonSchema",
     );
     expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).toContain(
-      "### Top Events",
+      "#### Event Title",
     );
     expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).toContain(
-      "### Summary",
+      "Today's takeaway:",
     );
     expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).not.toContain(
       "### Signals",
@@ -239,9 +239,9 @@ describe("digest provider", () => {
     await provider.generate({ prompt: "test" });
 
     const prompt = googleGenAIMock.generateContent.mock.calls[0][0]?.contents;
-    expect(prompt).toContain("### Top Events");
-    expect(prompt).toContain("### Summary");
-    expect(prompt).toContain("Insight:");
+    expect(prompt).toContain("#### Event Title");
+    expect(prompt).toContain("Today's takeaway:");
+    expect(prompt).toContain("Why it matters:");
     expect(prompt).not.toContain("### Signals");
   });
 

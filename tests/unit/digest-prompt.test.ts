@@ -30,10 +30,10 @@ describe("buildDigestPrompt", () => {
       interestText: "AI agents",
     });
 
-    expect(prompt).toContain('Include a "### Top Events" heading');
-    expect(prompt).toContain("List up to 7 numbered events");
-    expect(prompt).toContain('one separate line starting with "Insight:"');
-    expect(prompt).toContain('End with a "### Summary" heading');
+    expect(prompt).toContain("#### Event Title");
+    expect(prompt).toContain("up to 7");
+    expect(prompt).toContain("Why it matters:");
+    expect(prompt).toContain("Today's takeaway:");
     expect(prompt).not.toContain("summary, keyPoints, and whyItMatters");
   });
 });

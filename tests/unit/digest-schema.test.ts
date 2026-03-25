@@ -5,16 +5,21 @@ function buildTopic(index: number) {
   return {
     topic: `Topic ${index}`,
     markdown: [
-      "### Top Events",
+      "Today's landscape in this area saw significant developments.",
       "",
-      `1. **Event ${index}**`,
-      "   A concise event summary.",
-      "   Insight: This is why it matters.",
-      `   [来源：Example ${index} · 2026-03-24](https://example.com/${index})`,
+      "---",
       "",
-      "### Summary",
+      `#### Event ${index}`,
       "",
-      "Why this topic matters today.",
+      "A concise event summary with specific details.",
+      "",
+      "> **Why it matters:** This is why it matters and what it means going forward.",
+      "",
+      `*Sources: [Example ${index}](https://example.com/${index})*`,
+      "",
+      "---",
+      "",
+      "> **Today's takeaway:** Why this topic matters today.",
     ].join("\n"),
   };
 }

@@ -113,16 +113,21 @@ describe("PreviewPage", () => {
           {
             topic: "AI Agents",
             markdown: [
-              "### Top Events",
+              "Agent tooling saw a notable launch today.",
               "",
-              "1. **A new agent IDE launched**",
-              "   The IDE targets multi-agent workflows.",
-              "   Insight: Tooling is packaging orchestration into products.",
-              "   [来源：Example · 2026-03-24](https://example.com)",
+              "---",
               "",
-              "### Summary",
+              "#### A new agent IDE launched",
               "",
-              "Execution layers are becoming productized.",
+              "The IDE targets multi-agent workflows.",
+              "",
+              "> **Why it matters:** Tooling is packaging orchestration into products.",
+              "",
+              "*Sources: [Example](https://example.com)*",
+              "",
+              "---",
+              "",
+              "> **Today's takeaway:** Execution layers are becoming productized.",
             ].join("\n"),
           },
         ],
@@ -134,8 +139,8 @@ describe("PreviewPage", () => {
     render(await PreviewPage());
 
     expect(screen.getByRole("heading", { name: "Today's Synthesis" })).toBeInTheDocument();
-    expect(screen.getByText("Top Events")).toBeInTheDocument();
-    expect(screen.getByText("Summary")).toBeInTheDocument();
+    expect(screen.getByText("A new agent IDE launched")).toBeInTheDocument();
+    expect(screen.getByText(/Today's takeaway/)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Confirm and start daily digests" }),
     ).toBeInTheDocument();

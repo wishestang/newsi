@@ -47,10 +47,32 @@ export function DigestMarkdown({ content }: { content: string }) {
         a: ({ children, href }) => (
           <SafeLink href={href}>{children}</SafeLink>
         ),
+        h4: ({ children }) => (
+          <h4 className="text-[20px] font-bold leading-[28px] text-foreground">
+            {children}
+          </h4>
+        ),
+        hr: () => (
+          <hr className="border-t border-[var(--border-list)] my-6" />
+        ),
+        em: ({ children }) => (
+          <em className="text-[14px] text-[var(--text-muted)]">{children}</em>
+        ),
         blockquote: ({ children }) => (
           <blockquote className="border-l-2 border-[var(--border-solid)] pl-4 text-[var(--text-muted)]">
             {children}
           </blockquote>
+        ),
+        ul: ({ children }) => (
+          <ul className="list-disc pl-5 space-y-1">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal pl-5 space-y-1">{children}</ol>
+        ),
+        li: ({ children }) => (
+          <li className="text-[17px] leading-[28.9px] text-[var(--text-body)]">
+            {children}
+          </li>
         ),
         table: ({ children }) => (
           <div className="overflow-x-auto">
