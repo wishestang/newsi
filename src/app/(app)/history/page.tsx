@@ -89,8 +89,6 @@ export default async function HistoryPage() {
   );
 }
 
-export const dynamic = "force-dynamic";
-
 function getHistoryDigestTitle(status: "scheduled" | "generating" | "failed" | "ready") {
   switch (status) {
     case "scheduled":

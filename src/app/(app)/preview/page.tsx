@@ -226,5 +226,3 @@ export default async function PreviewPage() {
     </>
   );
 }
-
-export const dynamic = "force-dynamic";
