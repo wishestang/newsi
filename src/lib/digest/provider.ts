@@ -1,10 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
-import { z } from "zod";
 import type { DigestResponse } from "@/lib/digest/schema";
 import { digestResponseSchema } from "@/lib/digest/schema";
 import { TOPIC_MARKDOWN_FORMAT } from "@/lib/digest/prompt";
+import { z } from "zod";
 
 export interface DigestProvider {
   name?: string;
@@ -262,8 +262,6 @@ export function createGeminiDigestProvider({
         contents: buildGeminiDigestPrompt(prompt),
         config: {
           tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseJsonSchema: z.toJSONSchema(digestResponseSchema),
         },
       });
 

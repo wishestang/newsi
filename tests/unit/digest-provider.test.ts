@@ -144,10 +144,14 @@ describe("digest provider", () => {
         contents: expect.stringContaining("Generate a digest about AI agents and design tools."),
         config: expect.objectContaining({
           tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseJsonSchema: expect.any(Object),
         }),
       }),
+    );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.config).not.toHaveProperty(
+      "responseMimeType",
+    );
+    expect(googleGenAIMock.generateContent.mock.calls[0][0]?.config).not.toHaveProperty(
+      "responseJsonSchema",
     );
     expect(googleGenAIMock.generateContent.mock.calls[0][0]?.contents).toContain(
       "### Top Events",
@@ -182,7 +186,7 @@ describe("digest provider", () => {
     );
   });
 
-  it("builds a normalized digest from a single Gemini structured-output response", async () => {
+  it("builds a normalized digest from a single Gemini markdown response", async () => {
     const response = {
       text: '```json\n{"title":"每日情报摘要","intro":"今天最值得关注的是 AI coding 的新发布。","topics":[{"topic":"AI coding","markdown":"1. **OpenAI 发布了新的编程模型**\\n   新版本今天正式上线，迭代速度加快。（[OpenAI · 2026-03-24](https://example.com/openai)）\\n\\n> AI coding 仍是今天最相关的主题。"}]}\n```',
     };
