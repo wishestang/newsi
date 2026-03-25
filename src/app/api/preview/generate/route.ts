@@ -55,7 +55,7 @@ export async function POST() {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  await startPreviewDigestGeneration(user.id);
+  void startPreviewDigestGeneration(user.id);
 
   return Response.json({ ok: true });
 }

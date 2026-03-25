@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { DigestSkeleton } from "@/components/digest/digest-skeleton";
 import { DigestView } from "@/components/digest/digest-view";
 import { PreviewActions } from "@/components/preview/preview-actions";
 import { PreviewGenerationKickoff } from "@/components/preview/preview-generation-kickoff";
@@ -89,10 +90,7 @@ export default async function PreviewPage() {
       return (
         <>
           <PreviewGenerationKickoff generationToken={profile.preview.generationToken} />
-          <StatusPanel
-            label="Generating"
-            body="Newsi is preparing a real preview digest from your current Topics."
-          />
+          <DigestSkeleton />
           <PreviewActions />
         </>
       );
@@ -186,10 +184,7 @@ export default async function PreviewPage() {
     return (
       <>
         <PreviewGenerationKickoff generationToken={preview.previewDigest.generationToken} />
-        <StatusPanel
-          label="Generating"
-          body="Newsi is preparing a real preview digest from your current Topics."
-        />
+        <DigestSkeleton />
         <PreviewActions />
       </>
     );

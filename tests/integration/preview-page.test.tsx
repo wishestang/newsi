@@ -88,10 +88,7 @@ describe("PreviewPage", () => {
 
     render(await PreviewPage());
 
-    expect(screen.getByText("Generating")).toBeInTheDocument();
-    expect(
-      screen.getByText(/Newsi is preparing a real preview digest/i),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("article")).toBeInTheDocument();
   });
 
   it("renders the digest when the preview is ready", async () => {
