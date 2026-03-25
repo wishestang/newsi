@@ -1,6 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { db } from "@/lib/db";
-import { buildDigestPrompt } from "@/lib/digest/prompt";
+import { buildBasePrompt } from "@/lib/digest/prompt";
+import { fetchMatchingDataSources } from "@/lib/datasources";
 import { digestResponseSchema, type DigestResponse } from "@/lib/digest/schema";
 import {
   createDigestProvider,
@@ -43,7 +44,8 @@ export async function generateDigest({
   dateLabel: string;
   interestText: string;
 }) {
-  const prompt = buildDigestPrompt({ dateLabel, interestText });
+  const dataSourceContexts = await fetchMatchingDataSources(interestText);
+  const prompt = buildBasePrompt({ dateLabel, interestText, dataSourceContexts });
   const raw = await provider.generate({ prompt });
   return parseDigestResult(raw);
 }

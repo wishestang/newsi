@@ -1,4 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/datasources", () => ({
+  fetchMatchingDataSources: vi.fn().mockResolvedValue([]),
+}));
+
 import { generateDigest } from "@/lib/digest/service";
 
 describe("generateDigest", () => {

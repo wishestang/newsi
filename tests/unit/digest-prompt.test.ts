@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDigestPrompt } from "@/lib/digest/prompt";
+import { buildDigestPrompt, buildBasePrompt } from "@/lib/digest/prompt";
 
 describe("buildDigestPrompt", () => {
   it("keeps one universal prompt with quality requirements", () => {
@@ -35,5 +35,56 @@ describe("buildDigestPrompt", () => {
     expect(prompt).toContain("Why it matters:");
     expect(prompt).toContain("Today's takeaway:");
     expect(prompt).not.toContain("summary, keyPoints, and whyItMatters");
+  });
+
+  it("includes Leaderboard format for ranking-type topics", () => {
+    const prompt = buildDigestPrompt({
+      dateLabel: "2026-03-25",
+      interestText: "GitHub Trending",
+    });
+
+    expect(prompt).toContain("Format A: Event Briefing");
+    expect(prompt).toContain("Format B: Leaderboard");
+    expect(prompt).toContain("## Format Selection");
+    expect(prompt).toContain("| # | Name | Description | Metric |");
+  });
+});
+
+describe("buildBasePrompt with dataSourceContexts", () => {
+  it("includes pre-fetched data section when contexts are provided", () => {
+    const prompt = buildBasePrompt({
+      dateLabel: "2026-03-25",
+      interestText: "GitHub Trending",
+      dataSourceContexts: [
+        {
+          sourceName: "GitHub Trending",
+          markdown: "| # | Repo |\n|---|------|\n| 1 | test-repo |",
+        },
+      ],
+    });
+
+    expect(prompt).toContain("## Pre-fetched Real Data");
+    expect(prompt).toContain("### GitHub Trending");
+    expect(prompt).toContain("test-repo");
+    expect(prompt).toContain("MUST use this data");
+  });
+
+  it("omits pre-fetched data section when no contexts", () => {
+    const prompt = buildBasePrompt({
+      dateLabel: "2026-03-25",
+      interestText: "US stocks",
+      dataSourceContexts: [],
+    });
+
+    expect(prompt).not.toContain("## Pre-fetched Real Data");
+  });
+
+  it("omits pre-fetched data section by default", () => {
+    const prompt = buildBasePrompt({
+      dateLabel: "2026-03-25",
+      interestText: "US stocks",
+    });
+
+    expect(prompt).not.toContain("## Pre-fetched Real Data");
   });
 });

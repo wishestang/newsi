@@ -46,7 +46,7 @@ export function PreviewGenerationKickoff({
       router.refresh();
       pollInterval = setInterval(() => {
         router.refresh();
-      }, 1000);
+      }, 3000);
     });
 
     return () => {

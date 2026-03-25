@@ -242,6 +242,7 @@ describe("digest provider", () => {
     expect(prompt).toContain("#### Event Title");
     expect(prompt).toContain("Today's takeaway:");
     expect(prompt).toContain("Why it matters:");
+    expect(prompt).toContain("Format B: Leaderboard");
     expect(prompt).not.toContain("### Signals");
   });
 

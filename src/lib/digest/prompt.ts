@@ -1,16 +1,42 @@
+import type { DataSourceResult } from "@/lib/datasources/types";
+
+function buildDataSourcePromptSection(contexts: DataSourceResult[]): string {
+  if (contexts.length === 0) return "";
+
+  const sections = contexts
+    .filter((c) => c.markdown)
+    .map(
+      (c) => `### ${c.sourceName}\n\n${c.markdown}`,
+    );
+
+  if (sections.length === 0) return "";
+
+  return `
+## Pre-fetched Real Data
+
+The following real data has been pre-fetched for you. You MUST use this data as the primary source of truth. Do NOT fabricate or hallucinate entries — only reference items that appear in the data below.
+
+${sections.join("\n\n")}
+`;
+}
+
 export function buildBasePrompt({
   dateLabel,
   interestText,
+  dataSourceContexts = [],
 }: {
   dateLabel: string;
   interestText: string;
+  dataSourceContexts?: DataSourceResult[];
 }) {
+  const dataSection = buildDataSourcePromptSection(dataSourceContexts);
+
   return `
 You are an expert research analyst generating a personal daily intelligence briefing.
 
 Date: ${dateLabel}
 Standing brief: ${interestText}
-
+${dataSection}
 ## Your Task
 Based on the standing brief above, search for the most recent and relevant information as of the given date. Produce a thorough, data-rich daily digest.
 
@@ -33,7 +59,14 @@ Respond in the same language as the standing brief above. If the standing brief 
 }
 
 export const TOPIC_MARKDOWN_FORMAT = `
-The \`markdown\` field in each topic must follow this exact structure:
+The \`markdown\` field in each topic must follow one of two formats. Choose based on the topic's nature:
+
+## Format Selection
+
+- **Format A: Event Briefing** (default) — use for news, market moves, policy changes, product launches, and general events
+- **Format B: Leaderboard** — use for rankings, trending lists, charts, top-N lists, leaderboards, app store rankings, box office charts, GitHub trending, bestseller lists, etc.
+
+### Format A: Event Briefing
 
 1. **Opening paragraph** (1-2 sentences): A concise overview of the day's overall situation in this domain. No heading — just a plain paragraph at the top.
 
@@ -75,11 +108,51 @@ Description with specific details.
 > **Today's takeaway:** One-sentence overall assessment.
 \`\`\`
 
+### Format B: Leaderboard
+
+1. **Opening paragraph** (1-2 sentences): A brief overview of the ranking landscape and any notable shifts. No heading — just a plain paragraph at the top.
+
+2. **Ranking table**: A markdown table with these columns:
+   - \`#\` — rank number
+   - Name — item name as a markdown link: \`[Name](url)\`
+   - Description — 1-sentence summary
+   - Metric — the key data point (stars, downloads, revenue, score, etc.)
+
+3. **Optional highlights** (0-2): Use \`####\` blocks to expand on noteworthy entries or trends, following the same event block pattern as Format A.
+
+4. **Closing assessment**: End with a blockquote summary:
+   \`> **Today's takeaway:** One-sentence assessment.\`
+
+Example structure:
+\`\`\`
+Opening paragraph about today's ranking trends and notable movements.
+
+| # | Name | Description | Metric |
+|---|------|-------------|--------|
+| 1 | [Project Alpha](url) | A fast-growing ML framework | 2.3k stars today |
+| 2 | [Beta Tool](url) | CLI for cloud deployments | 1.8k stars today |
+| 3 | [Gamma UI](url) | Component library for React | 1.2k stars today |
+
+---
+
+#### Notable: Project Alpha surges to #1
+
+2-3 sentences about why this entry is noteworthy.
+
+> **Why it matters:** Analysis of the trend or significance.
+
+*Sources: [Source1](url1)*
+
+---
+
+> **Today's takeaway:** One-sentence overall assessment.
+\`\`\`
+
 Rules:
-- Do NOT use any headings other than \`####\` for events
+- Do NOT use any headings other than \`####\` for events or highlights
 - Do NOT use numbered lists for events — each event is its own \`####\` block
-- Separate every event block with \`---\`
-- Use markdown links for all sources
+- Separate every event/highlight block with \`---\`
+- Use markdown links for all sources and names
 - The "Why it matters" and "Today's takeaway" labels must match the language of the standing brief (e.g. use "为什么重要：" and "今日总评：" for Chinese)`;
 
 export function buildDigestPrompt({
