@@ -63,7 +63,7 @@ docs/onboarding/
   → 前端轮询 /api/preview/generate
   → 后端异步生成：获取数据源 → 构建 Prompt → 调用 LLM → 更新 PreviewDigest (ready)
   → 用户查看预览，点击确认
-  → confirmPreviewDigest()：创建 DailyDigest (ready) + InterestProfile → active
+  → confirmPreviewDigest()：创建 DailyDigest (ready) + InterestProfile → active + 删除 PreviewDigest
   → 跳转 /today
 ```
 
@@ -84,7 +84,7 @@ Vercel Cron 23:00 UTC (07:00 北京时间)
   → 查询所有 active 的 InterestProfile
   → 对每个 profile：
     → 检查当日是否已有 digest（幂等）
-    → 检查失败次数是否 > 3（放弃）
+    → 检查失败次数是否 >= 3（放弃）
     → 创建 DailyDigest (generating)
     → 获取匹配数据源 → 构建 Prompt → 调用 LLM
     → 成功 → status: ready
