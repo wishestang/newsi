@@ -42,7 +42,7 @@ docs/onboarding/
    - 先看 `core-flows.md` 建立全局认知
    - 按兴趣深入 `modules/` 各模块
    - 数据层细节看 `data-model.md`
-5. **本地开发快速启动**：Docker Compose 启动 PostgreSQL、环境变量配置、preview 模式说明
+5. **本地开发快速启动**：PostgreSQL 数据库配置、环境变量配置、preview 模式说明（无需数据库也可通过 preview 模式体验）
 
 ## core-flows.md — 核心流程
 
@@ -94,7 +94,7 @@ Vercel Cron 23:00 UTC (07:00 北京时间)
 关键代码路径：
 - `src/app/api/cron/digests/route.ts` — Cron 入口
 - `src/lib/digest/service.ts` — runDigestGenerationCycle, generateDigest
-- `src/lib/datasources/registry.ts` — fetchMatchingDataSources
+- `src/lib/datasources/` — fetchMatchingDataSources（通过 `index.ts` barrel export 导出，实现在 `registry.ts`）
 
 ### 流程三：摘要阅读与历史归档
 
@@ -111,6 +111,7 @@ Vercel Cron 23:00 UTC (07:00 北京时间)
 关键代码路径：
 - `src/app/(app)/today/page.tsx`
 - `src/app/(app)/history/page.tsx`
+- `src/lib/digest/view-state.ts` — getTodayDigestState()，决定 /today 页面渲染什么状态
 - `src/components/digest/digest-view.tsx` — DigestView
 
 ## 模块文档统一模板
@@ -146,8 +147,9 @@ Mermaid 图展示模块内部结构或与其他模块的交互关系。
 - Google OAuth 完整流程（Auth.js 配置、回调处理）
 - 双模式 session 策略：生产环境用 DB session，preview 模式用 JWT
 - Preview 模式 fallback 机制：无需数据库/认证即可体验核心功能
+- 运行模式检测：`src/lib/env.ts` 中的 `isLocalPreviewMode()`、`isPersistenceConfigured()`、`isAuthConfigured()` 是判断双模式架构的核心
 - `(app)` layout 中的鉴权守卫逻辑
-- 关键文件：`src/lib/auth.ts`、`src/app/api/auth/[...nextauth]/route.ts`、`src/app/signin/page.tsx`
+- 关键文件：`src/lib/auth.ts`、`src/lib/env.ts`、`src/app/api/auth/[...nextauth]/route.ts`、`src/app/signin/page.tsx`
 
 ### modules/topics.md — 兴趣配置
 
@@ -155,7 +157,7 @@ Mermaid 图展示模块内部结构或与其他模块的交互关系。
 - InterestProfile 状态机：`pending_preview` → `active`
 - 语言检测逻辑：根据 standing brief 内容自动判断中/英文
 - 时区处理：浏览器检测 → 存储到 User.accountTimezone → 影响 digest 日期计算
-- 清除兴趣时的级联删除（关联 digest 一起清除）
+- 清除兴趣时的删除行为：`clearInterestProfile` 删除 PreviewDigest 和 InterestProfile，DailyDigest 记录保留（仅在 User 被删除时通过 Prisma onDelete: Cascade 级联删除）
 - 关键文件：`src/lib/topics/service.ts`、`src/lib/topics/schema.ts`、`src/components/topics/topics-form.tsx`
 
 ### modules/digest-generation.md — 摘要生成核心逻辑
@@ -164,13 +166,14 @@ Mermaid 图展示模块内部结构或与其他模块的交互关系。
 
 - **Provider 抽象**：DigestProvider 接口设计，OpenAI 和 Gemini 两条路径
 - **OpenAI 路径**：structured outputs + web_search_preview 工具，gpt-5.4 默认模型
-- **Gemini 路径**：Google Search grounding，JSON 从 markdown fence 中提取，schema 字段归一化
+- **Gemini 路径**：Google Search grounding，gemini-2.5-flash 默认模型，JSON 从 markdown fence 中提取，schema 字段归一化
 - **Prompt 设计**：模板结构、语言自适应、数据源上下文注入方式
 - **Topic Markdown 格式**：
   - Format A（Event Briefing）：开篇 → 事件（h4 + `---` 分隔）→ "Today's takeaway" blockquote
   - Format B（Leaderboard）：开篇 → markdown 表格 → 可选 highlights → "Today's takeaway"
 - **DigestResponse schema**：title / intro / readingTime / topics[]
-- 关键文件：`src/lib/digest/service.ts`、`src/lib/digest/provider.ts`、`src/lib/digest/prompt.ts`、`src/lib/digest/schema.ts`
+- **View State**：`getTodayDigestState()` 决定 /today 页面渲染的状态，是数据层与 UI 层的桥梁
+- 关键文件：`src/lib/digest/service.ts`、`src/lib/digest/provider.ts`、`src/lib/digest/prompt.ts`、`src/lib/digest/schema.ts`、`src/lib/digest/view-state.ts`、`src/lib/digest/format.ts`
 
 ### modules/preview.md — 预览流程
 
@@ -179,8 +182,11 @@ Mermaid 图展示模块内部结构或与其他模块的交互关系。
 - 前端轮询机制：PreviewGenerationKickoff 组件定期检查状态
 - PreviewDigest 状态流转：`generating` → `ready` / `failed`
 - 确认流程：preview 数据转换为 DailyDigest，设置 firstEligibleDigestDayKey
-- Cookie-based preview 模式（无需登录）：PREVIEW_INTEREST_COOKIE 加密存储
-- 关键文件：`src/lib/preview-digest/service.ts`、`src/app/api/preview/generate/route.ts`、`src/components/preview/`
+- Cookie-based preview 模式（无需登录）：
+  - `src/lib/preview-state.ts` 实现完整的无状态 preview 状态机（基于加密 cookie）
+  - 包含 `buildPreviewInterestProfile`、`completePreviewGeneration`、`failPreviewGeneration`、`retryPreviewGeneration`、`confirmPreviewInterestProfile` 等函数
+  - 与数据库驱动的 preview 流程是独立的两条路径，需要分别说明
+- 关键文件：`src/lib/preview-digest/service.ts`、`src/lib/preview-state.ts`、`src/app/api/preview/generate/route.ts`、`src/components/preview/`
 
 ### modules/cron.md — 定时任务与批量生成
 
@@ -239,8 +245,10 @@ Mermaid 图展示模块内部结构或与其他模块的交互关系。
 | InterestProfile | 兴趣配置，status: pending_preview / active |
 | PreviewDigest | 预览摘要，status: generating / ready / failed |
 | DailyDigest | 每日摘要，status: scheduled / generating / ready / failed |
+| VerificationToken | Auth.js 内部表，应用代码不直接使用 |
 
 - 每张表的字段说明、索引、约束
+- 注意 InterestProfile 的 Prisma schema 默认值为 `@default(active)`，但 `saveInterestProfile` 创建时显式设为 `pending_preview`——文档中需说明这一差异
 - 关键关系：
   - User 1:1 InterestProfile
   - User 1:N DailyDigest
@@ -257,13 +265,34 @@ Mermaid 图展示模块内部结构或与其他模块的交互关系。
    - `sequenceDiagram` — 跨模块交互
    - `erDiagram` — 数据模型
 4. **篇幅控制**：
-   - 每个模块文档 1500-3000 字
+   - 每个模块文档 1500-3000 字（digest-generation.md 因覆盖内容较多，允许 3000-4500 字）
    - core-flows.md 3000-5000 字
    - README.md 1000-1500 字
 5. **去重策略**：
    - core-flows.md 描述"什么发生了"（端到端流程全景）
    - modules/ 描述"为什么这样做"和"怎么实现的"（细节与决策）
    - core-flows.md 中每个步骤标注 `→ 详见 modules/xxx.md` 链接
+
+## 术语表
+
+在 README.md 中包含一个术语表，解释以下领域术语：
+
+| 术语 | 含义 |
+|------|------|
+| Standing Brief | 用户编写的自然语言兴趣描述，系统据此生成每日简报 |
+| Digest Day Key | YYYY-MM-DD 格式的日期标识，基于用户时区计算 |
+| First Eligible Digest Day Key | 预览确认后的次日，即首次可生成每日摘要的日期 |
+| Generation Token | 防止预览生成并发竞态的唯一令牌 |
+| Preview Mode | 无需数据库和认证的本地体验模式，基于加密 cookie 存储状态 |
+| Grounding | Gemini 的 Google Search grounding 功能，为 LLM 输出提供实时搜索数据支撑 |
+
+## 暂不覆盖的模块
+
+以下模块在首批文档中暂不单独成文，后续按需补充：
+
+- **i18n**（`src/lib/i18n/`）：国际化基础设施，含 locale 配置、消息目录、服务端 i18n helpers
+- **timezone**（`src/lib/timezone.ts`）：北京时区工具函数
+- **db**（`src/lib/db.ts`）：Prisma client 单例
 
 ## 维护策略
 
