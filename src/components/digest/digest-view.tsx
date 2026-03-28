@@ -13,12 +13,14 @@ export function DigestView({
   digestDate,
   topics,
   digestDayKey,
+  showEndMarker = true,
 }: {
   title: string;
   intro?: string;
   digestDate: string;
   topics: DigestTopic[];
   digestDayKey?: string;
+  showEndMarker?: boolean;
 }) {
   return (
     <article className="mx-auto max-w-[760px] px-10 py-32">
@@ -61,19 +63,21 @@ export function DigestView({
       </div>
 
       {/* Footer */}
-      <div className="pt-32">
-        <div className="flex flex-col items-center border-t border-[var(--border-solid)] pt-[65px]">
-          <Image
-            src="/icon-sparkle-footer.svg"
-            alt=""
-            width={18.33}
-            height={42.33}
-          />
-          <span className="font-mono text-[11px] uppercase leading-[16.5px] tracking-[3.3px] text-text-muted">
-            End of Digest
-          </span>
+      {showEndMarker ? (
+        <div className="pt-32">
+          <div className="flex flex-col items-center border-t border-[var(--border-solid)] pt-[65px]">
+            <Image
+              src="/icon-sparkle-footer.svg"
+              alt=""
+              width={18.33}
+              height={42.33}
+            />
+            <span className="font-mono text-[11px] uppercase leading-[16.5px] tracking-[3.3px] text-text-muted">
+              End of Digest
+            </span>
+          </div>
         </div>
-      </div>
+      ) : null}
     </article>
   );
 }
