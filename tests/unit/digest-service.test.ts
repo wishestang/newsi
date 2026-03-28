@@ -4,7 +4,25 @@ vi.mock("@/lib/datasources", () => ({
   fetchMatchingDataSources: vi.fn().mockResolvedValue([]),
 }));
 
-import { generateDigest } from "@/lib/digest/service";
+const { dbMock } = vi.hoisted(() => ({
+  dbMock: {
+  dailyDigest: {
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    findMany: vi.fn(),
+  },
+  interestProfile: {
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+  },
+  },
+}));
+
+vi.mock("@/lib/db", () => ({
+  db: dbMock,
+}));
+
+import { generateDigest, retryDigest } from "@/lib/digest/service";
 
 describe("generateDigest", () => {
   it("returns parsed digest data from the provider", async () => {
@@ -38,5 +56,48 @@ describe("generateDigest", () => {
 
     expect(result.title).toBe("Today's Synthesis");
     expect(provider.generate).toHaveBeenCalledOnce();
+  });
+});
+
+describe("retryDigest", () => {
+  it("reuses the requested digest day key as the provider date label", async () => {
+    const provider = {
+      name: "test",
+      model: "test-model",
+      generate: vi.fn().mockResolvedValue({
+        title: "March 22 Synthesis",
+        intro: "Signals from March 22.",
+        readingTime: 6,
+        topics: [
+          {
+            topic: "AI",
+            markdown: "Topic markdown",
+          },
+        ],
+      }),
+    };
+
+    dbMock.dailyDigest.findUnique.mockResolvedValue({
+      userId: "user-1",
+      digestDayKey: "2026-03-22",
+      status: "failed",
+      retryCount: 0,
+      contentJson: null,
+    });
+    dbMock.dailyDigest.update.mockResolvedValue({});
+    dbMock.interestProfile.findUnique.mockResolvedValue({
+      userId: "user-1",
+      interestText: "AI agents",
+    });
+
+    await retryDigest("user-1", "2026-03-22", { provider });
+
+    await vi.waitFor(() => {
+      expect(provider.generate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining("Date: March 22, 2026"),
+        }),
+      );
+    });
   });
 });

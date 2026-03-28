@@ -33,14 +33,14 @@ function EventBlock() {
 
 function TopicBlock() {
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {/* topic heading */}
       <Bar className="h-7 w-2/5" />
 
       <div className="flex flex-col gap-4">
         {/* intro paragraph */}
         <Bar className="h-4 w-full" />
-        <Bar className="h-4 w-3/4" />
+        <Bar className="h-4 w-5/6" />
       </div>
 
       {/* separator */}
@@ -65,7 +65,7 @@ function TopicBlock() {
 
 export function DigestSkeleton() {
   return (
-    <article className="mx-auto max-w-[680px] animate-pulse px-10 py-32">
+    <article className="mx-auto flex min-h-[calc(100vh-96px)] max-w-[760px] animate-pulse flex-col justify-center px-10 py-16">
       {/* Date header */}
       <div className="flex items-center gap-4 pb-8">
         <Bar className="h-3 w-28" />
@@ -82,8 +82,7 @@ export function DigestSkeleton() {
       </div>
 
       {/* Topic blocks */}
-      <div className="mt-16 flex flex-col gap-[96px]">
-        <TopicBlock />
+      <div className="mt-14 flex flex-col gap-14">
         <TopicBlock />
       </div>
     </article>

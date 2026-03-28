@@ -13,6 +13,7 @@ import {
   parsePreviewInterestProfile,
   PREVIEW_INTEREST_COOKIE,
 } from "@/lib/preview-state";
+import { HistoryRetryPanel } from "./history-retry-panel";
 
 export default async function HistoryDetailPage({
   params,
@@ -84,7 +85,8 @@ export default async function HistoryDetailPage({
 
   if (digest.status !== "ready" || !digest.contentJson) {
     return (
-      <StatusPanel
+      <HistoryRetryPanel
+        digestDayKey={digestDayKey}
         label={digestDayKey}
         body="This digest exists, but the readable content is not available yet."
       />
@@ -93,7 +95,8 @@ export default async function HistoryDetailPage({
 
   if (!content) {
     return (
-      <StatusPanel
+      <HistoryRetryPanel
+        digestDayKey={digestDayKey}
         label={digestDayKey}
         body="This digest exists, but the stored content is not readable."
       />

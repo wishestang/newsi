@@ -7,7 +7,7 @@ import { DigestSkeleton } from "@/components/digest/digest-skeleton";
 import { DigestView } from "@/components/digest/digest-view";
 import { PreviewActions } from "@/components/preview/preview-actions";
 import { PreviewGenerationKickoff } from "@/components/preview/preview-generation-kickoff";
-import { StatusPanel } from "@/components/states/status-panel";
+import { PreviewRetryPanel } from "@/components/preview/preview-retry-panel";
 import { db } from "@/lib/db";
 import { isLocalPreviewMode } from "@/lib/env";
 import { formatTodayDate } from "@/lib/digest/format";
@@ -98,13 +98,10 @@ export default async function PreviewPage() {
 
     if (profile.preview.status === "failed") {
       return (
-        <>
-          <StatusPanel
-            label="Failed"
-            body={profile.preview.failureReason ?? "Preview generation failed. Try again."}
-          />
-          <PreviewActions onRetryAction={retryPreviewAction} canRetry />
-        </>
+        <PreviewRetryPanel
+          body={profile.preview.failureReason ?? "Preview generation failed. Try again."}
+          onRetryAction={retryPreviewAction}
+        />
       );
     }
 
@@ -112,13 +109,10 @@ export default async function PreviewPage() {
 
     if (!previewDigest) {
       return (
-        <>
-          <StatusPanel
-            label="Unavailable"
-            body="Preview content is stored, but it does not match the readable digest format."
-          />
-          <PreviewActions onRetryAction={retryPreviewAction} canRetry />
-        </>
+        <PreviewRetryPanel
+          body="Preview content is stored, but it does not match the readable digest format."
+          onRetryAction={retryPreviewAction}
+        />
       );
     }
 
@@ -192,25 +186,19 @@ export default async function PreviewPage() {
 
   if (preview.previewDigest.status === "failed") {
     return (
-      <>
-        <StatusPanel
-          label="Failed"
-          body={preview.previewDigest.failureReason ?? "Preview generation failed. Try again."}
-        />
-        <PreviewActions onRetryAction={retryAction} canRetry />
-      </>
+      <PreviewRetryPanel
+        body={preview.previewDigest.failureReason ?? "Preview generation failed. Try again."}
+        onRetryAction={retryAction}
+      />
     );
   }
 
   if (!preview.content) {
     return (
-      <>
-        <StatusPanel
-          label="Unavailable"
-          body="Preview content is stored, but it does not match the readable digest format."
-        />
-        <PreviewActions onRetryAction={retryAction} canRetry />
-      </>
+      <PreviewRetryPanel
+        body="Preview content is stored, but it does not match the readable digest format."
+        onRetryAction={retryAction}
+      />
     );
   }
 
@@ -226,3 +214,5 @@ export default async function PreviewPage() {
     </>
   );
 }
+
+export const dynamic = "force-dynamic";

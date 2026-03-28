@@ -123,4 +123,10 @@ describe("DigestView", () => {
 
     expect(screen.getByText("MARCH 22, 2026")).toBeInTheDocument();
   });
+
+  it("uses a wider reading column for digest content", () => {
+    const { container } = render(<DigestView {...defaultProps} />);
+
+    expect(container.querySelector("article")).toHaveClass("max-w-[760px]");
+  });
 });

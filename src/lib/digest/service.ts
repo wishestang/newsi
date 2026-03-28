@@ -1,4 +1,5 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { buildBasePrompt } from "@/lib/digest/prompt";
 import { fetchMatchingDataSources } from "@/lib/datasources";
@@ -233,6 +234,100 @@ export async function runDigestGenerationCycle({
   }
 
   return result;
+}
+
+export async function retryDigest(
+  userId: string,
+  digestDayKey: string,
+  { provider = createDigestProvider() }: { provider?: DigestProvider } = {},
+) {
+  if (!db) {
+    throw new Error("Persistence is not configured.");
+  }
+
+  const digest = await db.dailyDigest.findUnique({
+    where: { userId_digestDayKey: { userId, digestDayKey } },
+  });
+
+  if (!digest) {
+    throw new Error("Digest not found.");
+  }
+
+  if (digest.status === "ready" && digest.contentJson) {
+    const parsed = parseStoredDigestContent(digest.contentJson);
+    if (parsed) {
+      throw new Error("Digest is already ready.");
+    }
+  }
+
+  await db.dailyDigest.update({
+    where: { userId_digestDayKey: { userId, digestDayKey } },
+    data: {
+      status: "generating",
+      failureReason: null,
+      contentJson: Prisma.DbNull,
+      title: null,
+      intro: null,
+      readingTime: null,
+    },
+  });
+
+  // Fire-and-forget: don't await the LLM call
+  generateDigestInBackground(userId, digestDayKey, digest.retryCount, provider).catch(
+    (error) => console.error(`[retryDigest] background generation failed:`, error),
+  );
+}
+
+function getDateLabelForDigestDayKey(digestDayKey: string) {
+  const [year, month, day] = digestDayKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  return formatInTimeZone(date, DIGEST_TIMEZONE, "MMMM d, yyyy");
+}
+
+async function generateDigestInBackground(
+  userId: string,
+  digestDayKey: string,
+  retryCount: number,
+  provider: DigestProvider,
+) {
+  try {
+    const profile = await db!.interestProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      throw new Error("Interest profile not found.");
+    }
+
+    const result = await generateDigest({
+      provider,
+      dateLabel: getDateLabelForDigestDayKey(digestDayKey),
+      interestText: profile.interestText,
+    });
+
+    await db!.dailyDigest.update({
+      where: { userId_digestDayKey: { userId, digestDayKey } },
+      data: {
+        status: "ready",
+        title: result.title,
+        intro: result.intro,
+        contentJson: result,
+        readingTime: result.readingTime,
+        providerName: provider.name ?? null,
+        providerModel: provider.model ?? null,
+        failureReason: null,
+      },
+    });
+  } catch (error) {
+    await db!.dailyDigest.update({
+      where: { userId_digestDayKey: { userId, digestDayKey } },
+      data: {
+        status: "failed",
+        retryCount: retryCount + 1,
+        failureReason: getErrorMessage(error),
+      },
+    });
+  }
 }
 
 function getErrorMessage(error: unknown) {

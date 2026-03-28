@@ -18,7 +18,7 @@ export function DigestView({
   topics: DigestTopic[];
 }) {
   return (
-    <article className="mx-auto max-w-[680px] px-10 py-32">
+    <article className="mx-auto max-w-[760px] px-10 py-32">
       {/* Date header */}
       <div className="flex items-center gap-4 pb-8">
         <div className="flex flex-col items-start">
