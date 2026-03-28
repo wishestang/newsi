@@ -52,6 +52,46 @@ describe("shareDigest", () => {
       "Digest not found.",
     );
   });
+
+  it("throws if digest status is not ready", async () => {
+    dbMock.dailyDigest.findUnique.mockResolvedValue({
+      userId: "user1",
+      digestDayKey: "2026-03-28",
+      status: "generating",
+      shareSlug: null,
+    });
+
+    await expect(shareDigest("user1", "2026-03-28")).rejects.toThrow(
+      "Digest is not ready to be shared.",
+    );
+  });
+
+  it("handles unique constraint violation by returning existing slug", async () => {
+    const { Prisma } = await import("@prisma/client");
+    const uniqueError = new Prisma.PrismaClientKnownRequestError(
+      "Unique constraint failed",
+      { code: "P2002", clientVersion: "0.0.0" },
+    );
+
+    dbMock.dailyDigest.findUnique
+      .mockResolvedValueOnce({
+        userId: "user1",
+        digestDayKey: "2026-03-28",
+        status: "ready",
+        shareSlug: null,
+      })
+      .mockResolvedValueOnce({
+        userId: "user1",
+        digestDayKey: "2026-03-28",
+        status: "ready",
+        shareSlug: "race-condition-slug",
+      });
+    dbMock.dailyDigest.update.mockRejectedValueOnce(uniqueError);
+
+    const result = await shareDigest("user1", "2026-03-28");
+
+    expect(result).toBe("http://localhost:3000/public/race-condition-slug");
+  });
 });
 
 describe("getSharedDigest", () => {

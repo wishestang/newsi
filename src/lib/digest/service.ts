@@ -61,11 +61,15 @@ export async function shareDigest(
 
   const digest = await db.dailyDigest.findUnique({
     where: { userId_digestDayKey: { userId, digestDayKey } },
-    select: { shareSlug: true },
+    select: { shareSlug: true, status: true },
   });
 
   if (!digest) {
     throw new Error("Digest not found.");
+  }
+
+  if (digest.status !== "ready") {
+    throw new Error("Digest is not ready to be shared.");
   }
 
   if (digest.shareSlug) {
@@ -74,10 +78,26 @@ export async function shareDigest(
 
   const slug = crypto.randomUUID().replace(/-/g, "").slice(0, 21);
 
-  await db.dailyDigest.update({
-    where: { userId_digestDayKey: { userId, digestDayKey } },
-    data: { shareSlug: slug },
-  });
+  try {
+    await db.dailyDigest.update({
+      where: { userId_digestDayKey: { userId, digestDayKey } },
+      data: { shareSlug: slug },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const existing = await db.dailyDigest.findUnique({
+        where: { userId_digestDayKey: { userId, digestDayKey } },
+        select: { shareSlug: true },
+      });
+      if (existing?.shareSlug) {
+        return `${process.env.APP_URL || "http://localhost:3000"}/public/${existing.shareSlug}`;
+      }
+    }
+    throw error;
+  }
 
   return `${process.env.APP_URL || "http://localhost:3000"}/public/${slug}`;
 }
