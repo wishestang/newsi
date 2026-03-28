@@ -216,6 +216,7 @@ export default async function TodayPage() {
       intro={digest.intro ?? content.intro}
       topics={content.topics}
       digestDate={formatDigestDate(digest.digestDayKey)}
+      digestDayKey={digest.digestDayKey}
     />
   );
 }

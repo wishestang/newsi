@@ -109,6 +109,7 @@ export default async function HistoryDetailPage({
       intro={digest.intro ?? content.intro}
       topics={content.topics}
       digestDate={formatDigestDate(digestDayKey)}
+      digestDayKey={digestDayKey}
     />
   );
 }
