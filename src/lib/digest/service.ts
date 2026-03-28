@@ -51,6 +51,58 @@ export async function generateDigest({
   return parseDigestResult(raw);
 }
 
+export async function shareDigest(
+  userId: string,
+  digestDayKey: string,
+): Promise<string> {
+  if (!db) {
+    throw new Error("Persistence is not configured.");
+  }
+
+  const digest = await db.dailyDigest.findUnique({
+    where: { userId_digestDayKey: { userId, digestDayKey } },
+    select: { shareSlug: true },
+  });
+
+  if (!digest) {
+    throw new Error("Digest not found.");
+  }
+
+  if (digest.shareSlug) {
+    return `${process.env.APP_URL || "http://localhost:3000"}/public/${digest.shareSlug}`;
+  }
+
+  const slug = crypto.randomUUID().replace(/-/g, "").slice(0, 21);
+
+  await db.dailyDigest.update({
+    where: { userId_digestDayKey: { userId, digestDayKey } },
+    data: { shareSlug: slug },
+  });
+
+  return `${process.env.APP_URL || "http://localhost:3000"}/public/${slug}`;
+}
+
+export async function getSharedDigest(
+  slug: string,
+): Promise<StoredDigest | null> {
+  if (!db) {
+    throw new Error("Persistence is not configured.");
+  }
+
+  const digest = await db.dailyDigest.findUnique({
+    where: { shareSlug: slug },
+  });
+
+  if (!digest || digest.status !== "ready") {
+    return null;
+  }
+
+  return {
+    digest,
+    content: parseStoredDigestContent(digest.contentJson),
+  };
+}
+
 export function parseStoredDigestContent(content: unknown): DigestResponse | null {
   const result = digestResponseSchema.safeParse(content);
   return result.success ? result.data : null;
