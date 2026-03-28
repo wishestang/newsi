@@ -11,6 +11,19 @@ export function createPrismaClient() {
     return null;
   }
 
+  if (process.env.NODE_ENV === "development") {
+    try {
+      const url = new URL(process.env.DATABASE_URL!);
+      console.log("[db] Initializing PrismaClient", {
+        host: url.hostname,
+        port: url.port || "(default)",
+        database: url.pathname.replace(/^\//, ""),
+      });
+    } catch (error) {
+      console.warn("[db] Failed to parse DATABASE_URL", error);
+    }
+  }
+
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL!,
   });

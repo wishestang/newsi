@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { shareDigest } from "@/lib/digest/service";
@@ -45,6 +46,25 @@ export async function POST(request: Request) {
     const shareUrl = await shareDigest(user.id, digestDayKey);
     return NextResponse.json({ ok: true, shareUrl });
   } catch (error) {
+    console.error("[share] Failed to create share link", {
+      digestDayKey,
+      userId: user.id,
+      error:
+        error instanceof Prisma.PrismaClientKnownRequestError
+          ? {
+              name: error.name,
+              code: error.code,
+              message: error.message,
+              meta: error.meta,
+            }
+          : error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              }
+            : error,
+    });
     const message =
       error instanceof Error ? error.message : "Share failed.";
     const status = message === "Digest not found." ? 404 : 400;

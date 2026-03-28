@@ -10,9 +10,9 @@ import { ShareButton } from "@/components/digest/share-button";
 describe("ShareButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock clipboard API
-    Object.assign(navigator, {
-      clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
     });
   });
 
@@ -87,7 +87,7 @@ describe("ShareButton", () => {
     });
   });
 
-  it("returns to idle state on API error", async () => {
+  it("shows 生成链接失败 on API error", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ ok: false, error: "Digest not found." }),
@@ -99,7 +99,54 @@ describe("ShareButton", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(button).not.toBeDisabled();
+      expect(screen.getByText("生成链接失败")).toBeInTheDocument();
     });
+
+    expect(screen.getByText("Digest not found.")).toBeInTheDocument();
+  });
+
+  it("shows 复制失败 when copying the URL fails", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, shareUrl: "https://example.com/public/abc123" }),
+    });
+
+    render(<ShareButton digestDayKey="2026-03-28" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /share/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("复制失败")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText("链接已生成，但浏览器拒绝复制。"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a log hint when the shareSlug column is missing", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        ok: false,
+        error: 'column "shareSlug" does not exist',
+      }),
+    });
+
+    render(<ShareButton digestDayKey="2026-03-28" />);
+
+    fireEvent.click(screen.getByRole("button", { name: /share/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("生成链接失败")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText("分享链接生成失败。请查看本地服务日志里的 share 错误详情。"),
+    ).toBeInTheDocument();
   });
 });
