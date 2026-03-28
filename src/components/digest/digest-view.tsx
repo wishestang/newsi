@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { DigestMarkdown } from "@/components/digest/digest-markdown";
+import { ShareButton } from "@/components/digest/share-button";
 
 type DigestTopic = {
   topic: string;
@@ -11,11 +12,13 @@ export function DigestView({
   intro,
   digestDate,
   topics,
+  digestDayKey,
 }: {
   title: string;
   intro?: string;
   digestDate: string;
   topics: DigestTopic[];
+  digestDayKey?: string;
 }) {
   return (
     <article className="mx-auto max-w-[760px] px-10 py-32">
@@ -27,6 +30,7 @@ export function DigestView({
           </span>
         </div>
         <div className="h-px flex-1 bg-[var(--border)]" />
+        {digestDayKey && <ShareButton digestDayKey={digestDayKey} />}
       </div>
 
       {/* Title */}

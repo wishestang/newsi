@@ -129,4 +129,16 @@ describe("DigestView", () => {
 
     expect(container.querySelector("article")).toHaveClass("max-w-[760px]");
   });
+
+  it("renders share button when digestDayKey is provided", () => {
+    render(<DigestView {...defaultProps} digestDayKey="2026-03-28" />);
+
+    expect(screen.getByRole("button", { name: /share/i })).toBeInTheDocument();
+  });
+
+  it("does not render share button when digestDayKey is not provided", () => {
+    render(<DigestView {...defaultProps} />);
+
+    expect(screen.queryByRole("button", { name: /share/i })).not.toBeInTheDocument();
+  });
 });
